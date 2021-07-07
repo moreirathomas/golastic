@@ -43,7 +43,23 @@ func (s *Server) initRouter() {
 
 // registerRoutes registers each entity's routes on the server.
 func (s *Server) registerRoutes() {
+	// Root
 	s.router.HandleFunc("/", s.handleIndex)
+
+	// Insert new book
+	s.router.HandleFunc("/books", s.InsertBook).Methods(http.MethodPost)
+
+	// Search books (query)
+	s.router.HandleFunc("/books", s.SearchBooks).Methods(http.MethodGet)
+
+	// Get book by ID
+	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.GetBookByID).Methods(http.MethodGet)
+
+	// Update book
+	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.UpdateBook).Methods(http.MethodPut)
+
+	// Delete book by ID
+	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.DeleteBook).Methods(http.MethodDelete)
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
