@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -28,6 +29,21 @@ func NewRepository(c Config) (*Repository, error) {
 
 	repo := Repository{es: c.Client, indexName: c.IndexName}
 	return &repo, nil
+}
+
+// CreateIndex creates a new index with mapping.
+func (r *Repository) CreateIndex(mapping string) error {
+	res, err := r.es.Indices.Create(r.indexName, r.es.Indices.Create.WithBody(strings.NewReader(mapping)))
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	if res.IsError() {
+		return fmt.Errorf("error: %s", res)
+	}
+
+	return nil
 }
 
 // Info returns basic information about the Elasticsearch client.
