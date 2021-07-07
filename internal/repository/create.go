@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/moreirathomas/golastic/internal"
@@ -21,7 +22,7 @@ func (r *Repository) Create(doc internal.Book) error {
 
 	req := esapi.CreateRequest{
 		Index:      r.indexName,
-		DocumentID: doc.ID, // FIXME the ID must be known before adding to ES!
+		DocumentID: strconv.Itoa(doc.ID), // FIXME the ID must be known before adding to ES!
 		Body:       bytes.NewReader(payload),
 	}
 

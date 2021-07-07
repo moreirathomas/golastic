@@ -7,6 +7,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/moreirathomas/golastic/internal"
+	"github.com/moreirathomas/golastic/internal/http"
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/dotenv"
 )
@@ -15,6 +16,7 @@ const defaultEnvPath = "./.env"
 
 var env = map[string]string{
 	"ELASTICSEARCH_INDEX": "",
+	"SERVER_PORT":         "",
 }
 
 // MockupConfig regroups only flags that will be provided on
@@ -48,13 +50,20 @@ func run(envPath string, indexSetup bool, c MockupConfig) error {
 		return err
 	}
 
-	return initClient(indexSetup, c)
+	repo, err := initClient(indexSetup, c)
+	if err != nil {
+		return err
+	}
+
+	addr := ":" + env["SERVER_PORT"]
+	srv := http.NewServer(addr, *repo)
+	return srv.Start()
 }
 
-func initClient(indexSetup bool, c MockupConfig) error {
+func initClient(indexSetup bool, c MockupConfig) (*repository.Repository, error) {
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
-		return fmt.Errorf("error creating Elasticsearch client: %s", err)
+		return nil, fmt.Errorf("error creating Elasticsearch client: %s", err)
 	}
 
 	cfg := repository.Config{
@@ -64,32 +73,32 @@ func initClient(indexSetup bool, c MockupConfig) error {
 
 	repo, err := repository.NewRepository(cfg)
 	if err != nil {
-		return fmt.Errorf("error creating the repository: %s", err)
+		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
 
 	if indexSetup {
 		log.Println("Creating Elasticsearch index with mapping")
 		if err := setupIndex(repo); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := getESClientInfo(repo); err != nil {
-		return err
+		return nil, err
 	}
 
 	if c.populate {
 		log.Println("Populating Elasticsearch with mockup data")
 		if err := populateWithMockup(repo); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := executeSearch(repo, c.query); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return repo, nil
 }
 
 func setupIndex(repo *repository.Repository) error {
@@ -131,9 +140,9 @@ func executeSearch(repo *repository.Repository, query string) error {
 
 func populateWithMockup(repo *repository.Repository) error {
 	books := []internal.Book{
-		{Title: "Foo", Abstract: "Lorem ispum foo", ID: "1"},
-		{Title: "Bar", Abstract: "Lorem ispum bar", ID: "2"},
-		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: "3"},
+		{Title: "Foo", Abstract: "Lorem ispum foo", ID: 1},
+		{Title: "Bar", Abstract: "Lorem ispum bar", ID: 2},
+		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: 3},
 	}
 
 	for _, book := range books {
