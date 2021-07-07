@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/moreirathomas/golastic/internal"
 )
 
 // readURLQuery returns the value for the given key in the request URL.
@@ -30,6 +32,20 @@ func extractRouteParam(r *http.Request, p string) (string, error) {
 	return v, nil
 }
 
+func extractID(r *http.Request, key string) (int, error) {
+	idString, err := extractRouteParam(r, key)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		return 0, errors.New("integer expected")
+	}
+
+	return id, nil
+}
+
 // decodeBody reads the given request body and writes the decoded data to dest.
 // The body is expected to be encoded as JSON.
 func decodeBody(body io.ReadCloser, dest interface{}) error {
@@ -40,4 +56,18 @@ func decodeBody(body io.ReadCloser, dest interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func readBookPayload(body io.ReadCloser) (internal.Book, error) {
+	var book internal.Book
+
+	if err := decodeBody(body, &book); err != nil {
+		return internal.Book{}, err
+	}
+
+	if err := book.Validate(); err != nil {
+		return internal.Book{}, err
+	}
+
+	return book, nil
 }
