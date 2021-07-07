@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 
@@ -17,22 +18,25 @@ var env = map[string]string{
 }
 
 func main() {
+	query := flag.String("q", "foo", "String value used to search for a match")
+	flag.Parse()
+
 	envPath := dotenv.GetPath(defaultEnvPath)
 
-	if err := run(envPath); err != nil {
+	if err := run(envPath, *query); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string) error {
+func run(envPath string, query string) error {
 	if err := dotenv.Load(envPath, &env); err != nil {
 		return err
 	}
 
-	return initClient()
+	return initClient(query)
 }
 
-func initClient() error {
+func initClient(query string) error {
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		return fmt.Errorf("error creating Elasticsearch client: %s", err)
@@ -59,6 +63,10 @@ func initClient() error {
 		return err
 	}
 
+	if err := executeSearch(repo, query); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -82,5 +90,19 @@ func getESClientInfo(repo *repository.Repository) error {
 		return err
 	}
 	log.Println(res)
+	return nil
+}
+
+func executeSearch(repo *repository.Repository, query string) error {
+	res, err := repo.Search(query)
+	if err != nil {
+		return err
+	}
+
+	log.Println(res.Total)
+	for _, hit := range res.Hits {
+		log.Printf("%#v", hit)
+	}
+
 	return nil
 }
