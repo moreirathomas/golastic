@@ -15,7 +15,6 @@ const defaultEnvPath = "./.env"
 
 var env = map[string]string{
 	"ELASTICSEARCH_INDEX": "",
-	"ELASTICSEARCH_SETUP": "",
 }
 
 // MockupConfig regroups only flags that will be provided on
@@ -26,6 +25,8 @@ type MockupConfig struct {
 }
 
 func main() {
+	indexSetup := flag.Bool("setup", false, "Create Elasticsearch index")
+	// TODO temporary flags
 	query := flag.String("q", "foo", "String value used to search for a match")
 	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
 	flag.Parse()
@@ -37,20 +38,20 @@ func main() {
 		populate: *populate,
 	}
 
-	if err := run(envPath, cfg); err != nil {
+	if err := run(envPath, *indexSetup, cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string, c MockupConfig) error {
+func run(envPath string, indexSetup bool, c MockupConfig) error {
 	if err := dotenv.Load(envPath, &env); err != nil {
 		return err
 	}
 
-	return initClient(c)
+	return initClient(indexSetup, c)
 }
 
-func initClient(c MockupConfig) error {
+func initClient(indexSetup bool, c MockupConfig) error {
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		return fmt.Errorf("error creating Elasticsearch client: %s", err)
@@ -66,7 +67,7 @@ func initClient(c MockupConfig) error {
 		return fmt.Errorf("error creating the repository: %s", err)
 	}
 
-	if env["ELASTICSEARCH_SETUP"] == "true" {
+	if indexSetup {
 		log.Println("Creating Elasticsearch index with mapping")
 		if err := setupIndex(repo); err != nil {
 			return err
