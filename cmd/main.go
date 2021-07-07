@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/dotenv"
 )
@@ -17,26 +18,39 @@ var env = map[string]string{
 	"ELASTICSEARCH_SETUP": "",
 }
 
+// MockupConfig regroups only flags that will be provided on
+// the client's http request.
+type MockupConfig struct {
+	query    string
+	populate bool
+}
+
 func main() {
 	query := flag.String("q", "foo", "String value used to search for a match")
+	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
 	flag.Parse()
 
 	envPath := dotenv.GetPath(defaultEnvPath)
 
-	if err := run(envPath, *query); err != nil {
+	cfg := MockupConfig{
+		query:    *query,
+		populate: *populate,
+	}
+
+	if err := run(envPath, cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string, query string) error {
+func run(envPath string, c MockupConfig) error {
 	if err := dotenv.Load(envPath, &env); err != nil {
 		return err
 	}
 
-	return initClient(query)
+	return initClient(c)
 }
 
-func initClient(query string) error {
+func initClient(c MockupConfig) error {
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		return fmt.Errorf("error creating Elasticsearch client: %s", err)
@@ -63,7 +77,14 @@ func initClient(query string) error {
 		return err
 	}
 
-	if err := executeSearch(repo, query); err != nil {
+	if c.populate {
+		log.Println("Populating Elasticsearch with mockup data")
+		if err := populateWithMockup(repo); err != nil {
+			return err
+		}
+	}
+
+	if err := executeSearch(repo, c.query); err != nil {
 		return err
 	}
 
@@ -102,6 +123,22 @@ func executeSearch(repo *repository.Repository, query string) error {
 	log.Println(res.Total)
 	for _, hit := range res.Hits {
 		log.Printf("%#v", hit)
+	}
+
+	return nil
+}
+
+func populateWithMockup(repo *repository.Repository) error {
+	books := []internal.Book{
+		{Title: "Foo", Abstract: "Lorem ispum foo", ID: "1"},
+		{Title: "Bar", Abstract: "Lorem ispum bar", ID: "2"},
+		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: "3"},
+	}
+
+	for _, book := range books {
+		if err := repo.Create(book); err != nil {
+			return err
+		}
 	}
 
 	return nil
