@@ -1,0 +1,34 @@
+name: Go
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      # Check Go code format
+      - name: Lint
+        run: "! gofmt -l . 2>&1 | read"
+
+      # Check Go code sanity
+      - name: Vet
+        run: go vet ./...
+
+      # Run Go unit tests
+      - name: Test
+        run: go test -v ./...
+
+      # Build
+      - name: Build Server
+        run: go build -v ./cmd/main.go
