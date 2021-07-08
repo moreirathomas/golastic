@@ -108,7 +108,7 @@ func buildSearchQuery(query string) io.Reader {
 const searchAll = `
 	"query" : { "match_all" : {} },
 	"size" : 25,
-	"sort" : { "published" : "desc", "_doc" : "asc" }`
+	"sort" : { "created_at" : "desc", "_doc" : "asc" }`
 
 // TODO we could also use "combined_fields"
 const searchMatch = `
