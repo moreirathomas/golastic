@@ -2,7 +2,6 @@ package repository
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/moreirathomas/golastic/internal"
@@ -18,14 +17,14 @@ func (r Repository) SearchBooks(q string) ([]internal.Book, error) {
 	log.Println("Searching book: " + q)
 
 	return []internal.Book{
-		_mockBook(42),
-		_mockBook(314),
-		_mockBook(1618),
+		_mockBook("42"),
+		_mockBook("314"),
+		_mockBook("1618"),
 	}, nil
 }
 
-func (r Repository) GetBookByID(id int) (internal.Book, error) {
-	log.Println("Getting book with id: " + strconv.Itoa(id))
+func (r Repository) GetBookByID(id string) (internal.Book, error) {
+	log.Println("Getting book with id: " + id)
 
 	return _mockBook(id), nil
 }
@@ -48,15 +47,15 @@ func (r Repository) UpdateBook(b internal.Book) error {
 
 // DeleteBook is a WIP.
 // It remains to be implemented and its signature might change.
-func (r Repository) DeleteBook(id int) error {
-	log.Println("Deleting book with id: " + strconv.Itoa(id))
+func (r Repository) DeleteBook(id string) error {
+	log.Println("Deleting book with id: " + id)
 
 	return nil
 }
 
 // _mockBook is a temporary helper for testing purposes.
 // It must be deleted as soon as the crud is ready.
-func _mockBook(id int) internal.Book {
+func _mockBook(id string) internal.Book {
 	return internal.Book{
 		ID:        id,
 		CreatedAt: time.Now(),

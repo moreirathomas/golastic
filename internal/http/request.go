@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/moreirathomas/golastic/internal"
@@ -32,15 +31,10 @@ func extractRouteParam(r *http.Request, p string) (string, error) {
 	return v, nil
 }
 
-func extractID(r *http.Request, key string) (int, error) {
-	idString, err := extractRouteParam(r, key)
+func extractID(r *http.Request, key string) (string, error) {
+	id, err := extractRouteParam(r, key)
 	if err != nil {
-		return 0, err
-	}
-
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		return 0, errors.New("integer expected")
+		return "", err
 	}
 
 	return id, nil

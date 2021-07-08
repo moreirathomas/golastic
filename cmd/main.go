@@ -83,9 +83,9 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 		return nil, err
 	}
 
-	if err := printESClientInfo(repo); err != nil {
-		return nil, err
-	}
+	// if err := printESClientInfo(repo); err != nil {
+	// 	return nil, err
+	// }
 
 	if c.populate {
 		log.Println("Populating Elasticsearch with mockup data")
@@ -126,9 +126,9 @@ func executeSearch(repo *repository.Repository, query string) error {
 
 func populateWithMockup(repo *repository.Repository) error {
 	books := []internal.Book{
-		{Title: "Foo", Abstract: "Lorem ispum foo", ID: 1},
-		{Title: "Bar", Abstract: "Lorem ispum bar", ID: 2},
-		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: 3},
+		{Title: "Foo", Abstract: "Lorem ispum foo", ID: "1"},
+		{Title: "Bar", Abstract: "Lorem ispum bar", ID: "2"},
+		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: "3"},
 	}
 
 	for _, book := range books {

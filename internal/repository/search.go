@@ -55,7 +55,7 @@ type responseWrapper struct {
 			Value int
 		}
 		Hits []struct {
-			ID     int             `json:"_id,string"`
+			ID     string          `json:"_id"`
 			Source json.RawMessage `json:"_source"`
 			Sort   []interface{}   `json:"sort"`
 		}
