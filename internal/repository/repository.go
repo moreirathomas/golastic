@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/elastic/go-elasticsearch/v7"
@@ -31,8 +32,39 @@ func New(c Config) (*Repository, error) {
 	return &repo, nil
 }
 
-// CreateIndex creates a new index with mapping.
-func (r *Repository) CreateIndex(mapping string) error {
+// CreateIndexIfNotExists creates a new index with mapping
+// if the repository's unique index does not exists yet.
+func (r *Repository) CreateIndexIfNotExists(mapping string) error {
+	exists, err := r.indexExists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	log.Println("Creating Elasticsearch index with mapping")
+	return r.createIndex(mapping)
+}
+
+// indexExists returns true when the index already exists in the repository.
+func (r *Repository) indexExists() (bool, error) {
+	res, err := r.es.Indices.Exists([]string{r.indexName})
+	if err != nil {
+		return false, err
+	}
+	switch res.StatusCode {
+	case 200:
+		return true, nil
+	case 404:
+		return false, nil
+	default:
+		return false, fmt.Errorf("[%s]", res.Status())
+	}
+}
+
+// createIndex creates a new index with mapping.
+func (r *Repository) createIndex(mapping string) error {
 	res, err := r.es.Indices.Create(r.indexName, r.es.Indices.Create.WithBody(strings.NewReader(mapping)))
 	if err != nil {
 		return err

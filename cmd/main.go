@@ -27,7 +27,6 @@ type MockupConfig struct {
 }
 
 func main() {
-	indexSetup := flag.Bool("setup", false, "Create Elasticsearch index")
 	// TODO temporary flags
 	query := flag.String("q", "foo", "String value used to search for a match")
 	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
@@ -40,17 +39,17 @@ func main() {
 		populate: *populate,
 	}
 
-	if err := run(envPath, *indexSetup, cfg); err != nil {
+	if err := run(envPath, cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string, indexSetup bool, c MockupConfig) error {
+func run(envPath string, c MockupConfig) error {
 	if err := dotenv.Load(envPath, &env); err != nil {
 		return err
 	}
 
-	repo, err := initClient(indexSetup, c)
+	repo, err := initClient(c)
 	if err != nil {
 		return err
 	}
@@ -60,7 +59,7 @@ func run(envPath string, indexSetup bool, c MockupConfig) error {
 	return srv.Start()
 }
 
-func initClient(indexSetup bool, c MockupConfig) (*repository.Repository, error) {
+func initClient(c MockupConfig) (*repository.Repository, error) {
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		return nil, fmt.Errorf("error creating Elasticsearch client: %s", err)
@@ -76,11 +75,8 @@ func initClient(indexSetup bool, c MockupConfig) (*repository.Repository, error)
 		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
 
-	if indexSetup {
-		log.Println("Creating Elasticsearch index with mapping")
-		if err := setupIndex(repo); err != nil {
-			return nil, err
-		}
+	if err := setupIndex(repo); err != nil {
+		return nil, err
 	}
 
 	if err := printESClientInfo(repo); err != nil {
@@ -112,7 +108,7 @@ func setupIndex(repo *repository.Repository) error {
 		}
 	}}`
 
-	return repo.CreateIndex(mapping)
+	return repo.CreateIndexIfNotExists(mapping)
 }
 
 func printESClientInfo(repo *repository.Repository) error {
