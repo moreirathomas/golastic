@@ -1,6 +1,11 @@
 package internal
 
-import "time"
+import (
+	"time"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+)
 
 // Book represents a book in the API.
 type Book struct {
@@ -43,5 +48,22 @@ type BookService interface {
 // Validate return a non-nil error if the book receiver does not match
 // the validation requirements.
 func (b Book) Validate() error {
-	return nil
+	return validation.ValidateStruct(&b,
+		validation.Field(&b.Title, validation.Required, validation.Length(1, 10)),
+		validation.Field(&b.Abstract, validation.Required),
+		validation.Field(&b.Author, validation.By(func(_ interface{}) error {
+			return b.Author.Validate()
+		})),
+	)
+}
+
+// Validate is a WIP. Its implementation remains to be done.
+//
+// Validate return a non-nil error if the book receiver does not match
+// the validation requirements.
+func (a Author) Validate() error {
+	return validation.ValidateStruct(&a,
+		validation.Field(&a.Firstname, validation.Required, is.ASCII),
+		validation.Field(&a.Lastname, validation.Required, is.ASCII),
+	)
 }
