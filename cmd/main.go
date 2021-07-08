@@ -126,9 +126,9 @@ func executeSearch(repo *repository.Repository, query string) error {
 
 func populateWithMockup(repo *repository.Repository) error {
 	books := []internal.Book{
-		{Title: "Foo", Abstract: "Lorem ispum foo", ID: "1"},
-		{Title: "Bar", Abstract: "Lorem ispum bar", ID: "2"},
-		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also", ID: "3"},
+		{Title: "Foo", Abstract: "Lorem ispum foo"},
+		{Title: "Bar", Abstract: "Lorem ispum bar"},
+		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also"},
 	}
 
 	for _, book := range books {

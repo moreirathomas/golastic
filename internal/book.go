@@ -4,11 +4,11 @@ import "time"
 
 // Book represents a book in the API.
 type Book struct {
-	ID        string    `json:"id"`
+	ID        string    `json:"id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	Title     string    `json:"title"`
 	Abstract  string    `json:"abstract"`
-	Author    Author    `json:"-"`
+	Author    Author    `json:"author"`
 }
 
 // Author represents a book's author.
