@@ -2,11 +2,9 @@ package repository
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/moreirathomas/golastic/internal"
 )
 
@@ -17,15 +15,7 @@ func (r *Repository) Create(book internal.Book) error {
 		return err
 	}
 
-	ctx := context.Background()
-
-	req := esapi.CreateRequest{
-		Index:      r.indexName,
-		DocumentID: book.ID, // FIXME the ID must be known before adding to ES!
-		Body:       bytes.NewReader(payload),
-	}
-
-	res, err := req.Do(ctx, r.es)
+	res, err := r.es.Index(r.indexName, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
