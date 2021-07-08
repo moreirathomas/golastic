@@ -121,3 +121,5 @@ const searchMatch = `
 	},
 	"size" : 25,
 	"sort" : [ { "_score" : "desc" }, { "_doc" : "asc" } ]`
+
+// func (r *Repository) Get(id string) (internal.Book, error) {}

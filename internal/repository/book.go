@@ -2,7 +2,6 @@ package repository
 
 import (
 	"log"
-	"time"
 
 	"github.com/moreirathomas/golastic/internal"
 )
@@ -14,56 +13,46 @@ var _ internal.BookService = (*Repository)(nil)
 // It remains to be implemented and its signature might change.
 // It will likely return and ES result type in the future.
 func (r Repository) SearchBooks(q string) ([]internal.Book, error) {
-	log.Println("Searching book: " + q)
+	res, err := r.Search(q)
+	if err != nil {
+		return []internal.Book{}, err
+	}
 
-	return []internal.Book{
-		_mockBook("42"),
-		_mockBook("314"),
-		_mockBook("1618"),
-	}, nil
+	log.Printf("Retrieved %d books\n", res.Total)
+	// TODO Hit may not embed Book in the future.
+	var books []internal.Book
+	for _, hit := range res.Hits {
+		b := internal.Book{
+			ID:        hit.ID,
+			CreatedAt: hit.CreatedAt,
+			Title:     hit.Title,
+			Abstract:  hit.Abstract,
+			Author:    hit.Author,
+		}
+		books = append(books, b)
+	}
+
+	return books, nil
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	log.Println("Getting book with id: " + id)
-
-	return _mockBook(id), nil
+	// FIXME we need to declare a type for GET api before
+	// unmarshalling the response to a Book.
+	// return r.Get(id)
+	return internal.Book{}, nil
 }
 
-// InsertBook is a WIP.
-// It remains to be implemented and its signature might change.
+// InsertBook indexes a new book.
 func (r Repository) InsertBook(b internal.Book) error {
-	log.Println("Inserting book: " + b.Title)
-
-	return nil
+	return r.Create(b)
 }
 
-// UpdateBook is a WIP.
-// It remains to be implemented and its signature might change.
+// UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	log.Println("Updating book: " + b.Title)
-
-	return nil
+	return r.Update(b)
 }
 
-// DeleteBook is a WIP.
-// It remains to be implemented and its signature might change.
+// DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	log.Println("Deleting book with id: " + id)
-
-	return nil
-}
-
-// _mockBook is a temporary helper for testing purposes.
-// It must be deleted as soon as the crud is ready.
-func _mockBook(id string) internal.Book {
-	return internal.Book{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "The Fellowship of the Ring",
-		Abstract:  "Some cool guys go on a trip.",
-		Author: internal.Author{
-			Firstname: "Jean-Raoul-Roger",
-			Lastname:  "Tolkien",
-		},
-	}
+	return r.Delete(id)
 }
