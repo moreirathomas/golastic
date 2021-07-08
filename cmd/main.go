@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"log"
@@ -25,6 +26,9 @@ type MockupConfig struct {
 	query    string
 	populate bool
 }
+
+//go:embed mapping.json
+var mapping string
 
 func main() {
 	// TODO temporary flags
@@ -75,7 +79,7 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
 
-	if err := setupIndex(repo); err != nil {
+	if err := repo.CreateIndexIfNotExists(mapping); err != nil {
 		return nil, err
 	}
 
@@ -95,20 +99,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	}
 
 	return repo, nil
-}
-
-func setupIndex(repo *repository.Repository) error {
-	// TODO this may be extracted inside a json file and read when needed.
-	mapping := `{
-	"mappings": {
-		"properties": {
-			"id":         { "type": "keyword" },
-			"title":      { "type": "text", "analyzer": "english" },
-			"asbtract":   { "type": "text", "analyzer": "english" }
-		}
-	}}`
-
-	return repo.CreateIndexIfNotExists(mapping)
 }
 
 func printESClientInfo(repo *repository.Repository) error {
