@@ -71,7 +71,7 @@ func initClient(indexSetup bool, c MockupConfig) (*repository.Repository, error)
 		IndexName: env["ELASTICSEARCH_INDEX"],
 	}
 
-	repo, err := repository.NewRepository(cfg)
+	repo, err := repository.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
@@ -83,7 +83,7 @@ func initClient(indexSetup bool, c MockupConfig) (*repository.Repository, error)
 		}
 	}
 
-	if err := getESClientInfo(repo); err != nil {
+	if err := printESClientInfo(repo); err != nil {
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func setupIndex(repo *repository.Repository) error {
 	return repo.CreateIndex(mapping)
 }
 
-func getESClientInfo(repo *repository.Repository) error {
+func printESClientInfo(repo *repository.Repository) error {
 	res, err := repo.Info()
 	if err != nil {
 		return err

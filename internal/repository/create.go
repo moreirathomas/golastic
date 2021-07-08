@@ -11,9 +11,9 @@ import (
 	"github.com/moreirathomas/golastic/internal"
 )
 
-// Create indexes a new document.
-func (r *Repository) Create(doc internal.Book) error {
-	payload, err := json.Marshal(doc)
+// Create indexes a new book document.
+func (r *Repository) Create(book internal.Book) error {
+	payload, err := json.Marshal(book)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func (r *Repository) Create(doc internal.Book) error {
 
 	req := esapi.CreateRequest{
 		Index:      r.indexName,
-		DocumentID: strconv.Itoa(doc.ID), // FIXME the ID must be known before adding to ES!
+		DocumentID: strconv.Itoa(book.ID), // FIXME the ID must be known before adding to ES!
 		Body:       bytes.NewReader(payload),
 	}
 

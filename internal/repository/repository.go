@@ -21,8 +21,8 @@ type Repository struct {
 	indexName string
 }
 
-// NewRepository returns a new instance of repository.
-func NewRepository(c Config) (*Repository, error) {
+// New returns a new instance of repository.
+func New(c Config) (*Repository, error) {
 	if c.IndexName == "" {
 		return &Repository{}, errors.New("cannot use empty string \"\" as index name")
 	}
