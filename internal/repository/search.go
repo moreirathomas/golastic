@@ -5,12 +5,12 @@ import (
 	"io"
 
 	"github.com/moreirathomas/golastic/internal"
-	"github.com/moreirathomas/golastic/internal/repository/elasticsearch"
+	"github.com/moreirathomas/golastic/pkg/golastic"
 )
 
 // Search returns results matching a query.
-func (r *Repository) Search(query string) (*elasticsearch.SearchResults, error) {
-	var results elasticsearch.SearchResults
+func (r *Repository) Search(query string) (*golastic.SearchResults, error) {
+	var results golastic.SearchResults
 
 	res, err := r.es.Search(
 		r.es.Search.WithIndex(r.indexName),
@@ -27,7 +27,7 @@ func (r *Repository) Search(query string) (*elasticsearch.SearchResults, error) 
 		return &results, fmt.Errorf("error: %s", res)
 	}
 
-	results, err = elasticsearch.UnwrapSearchResponse(res, internal.Book{})
+	results, err = golastic.UnwrapSearchResponse(res, internal.Book{})
 	if err != nil {
 		return &results, err
 	}
@@ -37,10 +37,10 @@ func (r *Repository) Search(query string) (*elasticsearch.SearchResults, error) 
 
 func buildSearchQuery(search string) io.Reader {
 	if search == "" {
-		return elasticsearch.NewDefaultSearchQuery().Reader()
+		return golastic.NewDefaultSearchQuery().Reader()
 	}
-	return elasticsearch.NewSearchQuery(search, elasticsearch.SearchQueryConfig{
-		Fields: []elasticsearch.Field{
+	return golastic.NewSearchQuery(search, golastic.SearchQueryConfig{
+		Fields: []golastic.Field{
 			{Name: "title", Weight: 10},
 			{Name: "abstract"},
 		},
