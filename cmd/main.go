@@ -2,9 +2,7 @@ package main
 
 import (
 	"log"
-	"testing"
 
-	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/internal/http"
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/dotenv"
@@ -32,14 +30,4 @@ func run(envPath string) error {
 	repo := repository.Repository{}
 	srv := http.NewServer(addr, repo)
 	return srv.Start()
-}
-
-func TestValidate(t *testing.T) {
-	b := internal.Book{
-		Title: "Wesh",
-	}
-	log.Println(b.Validate())
-	if err := b.Validate(); err == nil {
-		t.Fatal("Validate should return a non nil error when invalid")
-	}
 }
