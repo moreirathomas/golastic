@@ -1,0 +1,17 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "english"
+      },
+      "asbtract": {
+        "type": "text",
+        "analyzer": "english"
+      }
+    }
+  }
+}

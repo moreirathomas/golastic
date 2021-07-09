@@ -9,7 +9,7 @@ import (
 
 // Book represents a book in the API.
 type Book struct {
-	ID        int       `json:"id"`
+	ID        string    `json:"id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	Title     string    `json:"title"`
 	Abstract  string    `json:"abstract"`
@@ -31,7 +31,7 @@ type BookService interface {
 	// GetBookByID retrieves a book by its ID in the repository.
 	// It returns a non-nil error if one occurs in the process
 	// or if no match were found.
-	GetBookByID(id int) (Book, error)
+	GetBookByID(id string) (Book, error)
 
 	// InsertBook adds the given book in the repository.
 	InsertBook(book Book) error
@@ -40,7 +40,7 @@ type BookService interface {
 	UpdateBook(book Book) error
 
 	// DeleteBook deletes a book by its ID in the repository.
-	DeleteBook(id int) error
+	DeleteBook(id string) error
 }
 
 // Validate return a non-nil error if the book receiver does not match
