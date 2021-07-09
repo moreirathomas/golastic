@@ -100,7 +100,6 @@ func NewDefaultQuery() Query {
 	q := Query{}
 	q.Query.MatchAll.Boost = 1
 	q.Sort = []map[string]string{
-		{"created_at": "desc"},
 		{"_doc": "asc"},
 	}
 	q.Size = defaultQuerySize
