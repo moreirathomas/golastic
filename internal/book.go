@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -62,4 +63,17 @@ func (a Author) Validate() error {
 		validation.Field(&a.Firstname, validation.Required, is.ASCII, validation.Length(1, 50)),
 		validation.Field(&a.Lastname, validation.Required, is.ASCII, validation.Length(1, 50)),
 	)
+}
+
+// NewHit returns a new hit for ElasticSearch search result that can be later
+// casted as a Book. It is necessary to implement elasticsearch.Document interface.
+func (b Book) NewHit(id string, src json.RawMessage) (interface{}, error) {
+	hit := Book{
+		ID: id,
+	}
+	if err := json.Unmarshal(src, &hit); err != nil {
+		return Book{}, err
+	}
+
+	return hit, nil
 }
