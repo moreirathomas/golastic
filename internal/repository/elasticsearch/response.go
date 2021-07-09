@@ -19,8 +19,8 @@ type SearchResults struct {
 	Hits  []interface{} `json:"hits"`
 }
 
-// responseWrapper represents the response of an ElasticSearch search query.
-type responseWrapper struct {
+// searchResponseWrapper represents the response of an ElasticSearch search query.
+type searchResponseWrapper struct {
 	Took int
 	Hits struct {
 		Total struct {
@@ -34,15 +34,15 @@ type responseWrapper struct {
 	}
 }
 
-// UnwrapResponse reads an ElasticSearch response and returns a SearchResults
+// UnwrapSearchResponse reads an ElasticSearch response and returns a SearchResults
 // or the first non-nil error occurring in the process.
 // It must be provided a Document to determinate the marshaling process.
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
-func UnwrapResponse(res *esapi.Response, doc Document) (SearchResults, error) {
+func UnwrapSearchResponse(res *esapi.Response, doc Document) (SearchResults, error) {
 	var results SearchResults
 
-	var rw responseWrapper
+	var rw searchResponseWrapper
 	if err := json.NewDecoder(res.Body).Decode(&rw); err != nil {
 		return results, err
 	}

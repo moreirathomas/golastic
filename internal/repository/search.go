@@ -27,7 +27,7 @@ func (r *Repository) Search(query string) (*elasticsearch.SearchResults, error) 
 		return &results, fmt.Errorf("error: %s", res)
 	}
 
-	results, err = elasticsearch.UnwrapResponse(res, internal.Book{})
+	results, err = elasticsearch.UnwrapSearchResponse(res, internal.Book{})
 	if err != nil {
 		return &results, err
 	}
