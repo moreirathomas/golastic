@@ -13,11 +13,11 @@ const (
 	defaultQuerySize = 10
 )
 
-// Query represents an ElasticSearch search query.
+// SearchQuery represents an ElasticSearch search query.
 // It can be built via NewQuery or NewDefaultQuery.
 // It exposes methods to easily retrieve its value
 // as bytes, string or via io.Reader.
-type Query struct {
+type SearchQuery struct {
 	Query struct {
 		MatchAll struct {
 			Boost int `json:"boost"`
@@ -33,23 +33,23 @@ type Query struct {
 }
 
 // Bytes returns the raw query as bytes.
-func (q Query) Bytes() []byte {
+func (q SearchQuery) Bytes() []byte {
 	// b, _ := json.MarshalIndent(q, "", "  ")
 	b, _ := json.Marshal(q)
 	return b
 }
 
 // String returns the raw query as a string.
-func (q Query) String() string {
+func (q SearchQuery) String() string {
 	return string(q.Bytes())
 }
 
 // Reader returns the raw query as an io.Reader.
-func (q Query) Reader() io.Reader {
+func (q SearchQuery) Reader() io.Reader {
 	return bytes.NewReader(q.Bytes())
 }
 
-// Field is a column name associated with an optional weight.
+// Field is a field name associated with an optional weight.
 // It provides marshaling methods allowing to comply automatically
 // with ElasticSearch syntax for fields in a query (see MarshalText)
 type Field struct {
@@ -94,10 +94,10 @@ func (f Field) String() string {
 	return fmt.Sprintf("%s^%d", f.Name, f.Weight)
 }
 
-// NewDefaultQuery returns a Query targeting all documents
+// NewDefaultSearchQuery returns a Query targeting all documents
 // for the current index, ordered by creation date.
-func NewDefaultQuery() Query {
-	q := Query{}
+func NewDefaultSearchQuery() SearchQuery {
+	q := SearchQuery{}
 	q.Query.MatchAll.Boost = 1
 	q.Sort = []map[string]string{
 		{"_doc": "asc"},
@@ -107,21 +107,21 @@ func NewDefaultQuery() Query {
 	return q
 }
 
-// QueryConfig is a flattened representation of injectable values
+// SearchQueryConfig is a flattened representation of injectable values
 // in an ElasticSearch query. The values are then injectected
 // in the right place via NewQuery.
 // It allows to define a Query conveniently, without having to
 // reproduce the whole structure.
-type QueryConfig struct {
+type SearchQueryConfig struct {
 	Fields []Field
 	Sort   []map[string]string
 	Size   int
 }
 
-// NewQuery returns a Query, built upon the given search query
+// NewSearchQuery returns a Query, built upon the given search query
 // and the QueryConfig.
-func NewQuery(qs string, cfg QueryConfig) Query {
-	q := Query{}
+func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
+	q := SearchQuery{}
 	q.Query.MultiMatch.Query = qs
 	q.Query.MultiMatch.Fields = cfg.Fields
 	q.Query.MultiMatch.Operator = defaultOperator

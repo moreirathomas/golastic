@@ -37,9 +37,9 @@ func (r *Repository) Search(query string) (*elasticsearch.SearchResults, error) 
 
 func buildSearchQuery(search string) io.Reader {
 	if search == "" {
-		return elasticsearch.NewDefaultQuery().Reader()
+		return elasticsearch.NewDefaultSearchQuery().Reader()
 	}
-	return elasticsearch.NewQuery(search, elasticsearch.QueryConfig{
+	return elasticsearch.NewSearchQuery(search, elasticsearch.SearchQueryConfig{
 		Fields: []elasticsearch.Field{
 			{Name: "title", Weight: 10},
 			{Name: "abstract"},

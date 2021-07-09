@@ -13,7 +13,7 @@ func TestMarshaling(t *testing.T) {
 type marshalingTest struct{}
 
 func (test marshalingTest) fields(t *testing.T) {
-	q := Query{}
+	q := SearchQuery{}
 	q.Query.MultiMatch.Fields = []Field{
 		{"title", 10},
 		{"abstract", 5},
@@ -28,7 +28,7 @@ func (test marshalingTest) fields(t *testing.T) {
 }
 
 func (test marshalingTest) sort(t *testing.T) {
-	q := Query{}
+	q := SearchQuery{}
 	q.Sort = []map[string]string{
 		{"_score": "desc"},
 		{"_doc": "asc"},
