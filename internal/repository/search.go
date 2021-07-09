@@ -71,7 +71,7 @@ func unwrapResponse(res *esapi.Response) (SearchResults, error) {
 	}
 
 	results.Total = w.Hits.Total.Value
-	if len(w.Hits.Hits) < 1 {
+	if w.Hits.Total.Value < 1 {
 		results.Hits = []*Hit{}
 		return results, nil
 	}

@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"runtime"
-	"time"
 
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/moreirathomas/golastic/internal"
@@ -36,32 +34,26 @@ func (r *Repository) Create(book internal.Book) error {
 // CreateBulk indexes multiple new book documents at once.
 func (r *Repository) CreateBulk(books []internal.Book) error {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Index:         r.indexName,
-		Client:        r.es,
-		NumWorkers:    runtime.NumCPU(),
-		FlushBytes:    int(5e+6),
-		FlushInterval: 30 * time.Second,
+		Index:  r.indexName,
+		Client: r.es,
 	})
 	if err != nil {
 		return err
 	}
 
-	for _, v := range books {
-		var err error
-		payload, err := json.Marshal(v)
+	for _, b := range books {
+		payload, err := json.Marshal(b)
 		if err != nil {
 			return err
 		}
 
-		err = bi.Add(context.Background(), esutil.BulkIndexerItem{
+		if err := bi.Add(context.Background(), esutil.BulkIndexerItem{
 			Action: "index",
 			Body:   bytes.NewReader(payload),
-			OnFailure: func(c context.Context, bii esutil.BulkIndexerItem, biri esutil.BulkIndexerResponseItem, e error) {
+			OnFailure: func(_ context.Context, _ esutil.BulkIndexerItem, _ esutil.BulkIndexerResponseItem, e error) {
 				err = fmt.Errorf("error: %s", e)
 			},
-		})
-
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 	}
