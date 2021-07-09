@@ -94,15 +94,18 @@ func (f Field) String() string {
 	return fmt.Sprintf("%s^%d", f.Name, f.Weight)
 }
 
-// NewDefaultSearchQuery returns a Query targeting all documents
+// MatchAllSearchQuery returns a Query targeting all documents
 // for the current index, ordered by creation date.
-func NewDefaultSearchQuery() SearchQuery {
+func MatchAllSearchQuery(size int) SearchQuery {
 	q := SearchQuery{}
 	q.Query.MatchAll.Boost = 1
 	q.Sort = []map[string]string{
 		{"_doc": "asc"},
 	}
 	q.Size = defaultQuerySize
+	if size > 0 {
+		q.Size = size
+	}
 
 	return q
 }

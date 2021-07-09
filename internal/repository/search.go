@@ -37,7 +37,7 @@ func (r *Repository) Search(query string) (*golastic.SearchResults, error) {
 
 func buildSearchQuery(search string) io.Reader {
 	if search == "" {
-		return golastic.NewDefaultSearchQuery().Reader()
+		return golastic.MatchAllSearchQuery(10).Reader()
 	}
 	return golastic.NewSearchQuery(search, golastic.SearchQueryConfig{
 		Fields: []golastic.Field{
