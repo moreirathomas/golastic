@@ -7,7 +7,7 @@ import (
 )
 
 // Document provides a NewHit method that should unmarshal a json result
-// obtained from  an ElasticSearch search response.
+// obtained from an ElasticSearch search response.
 // It should return your own entity and an error.
 type Document interface {
 	NewHit(id string, src json.RawMessage) (interface{}, error)

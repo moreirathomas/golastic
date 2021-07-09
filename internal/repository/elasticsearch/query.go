@@ -108,12 +108,19 @@ func NewDefaultQuery() Query {
 	return q
 }
 
+// QueryConfig is a flattened representation of injectable values
+// in an ElasticSearch query. The values are then injectected
+// in the right place via NewQuery.
+// It allows to define a Query conveniently, without having to
+// reproduce the whole structure.
 type QueryConfig struct {
 	Fields []Field
 	Sort   []map[string]string
 	Size   int
 }
 
+// NewQuery returns a Query, built upon the given search query
+// and the QueryConfig.
 func NewQuery(qs string, cfg QueryConfig) Query {
 	q := Query{}
 	q.Query.MultiMatch.Query = qs
