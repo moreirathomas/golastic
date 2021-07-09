@@ -41,8 +41,8 @@ func buildSearchQuery(search string) io.Reader {
 	}
 	return elasticsearch.NewQuery(search, elasticsearch.QueryConfig{
 		Fields: []elasticsearch.Field{
-			{"title", 10},
-			{"abstract", 0},
+			{Name: "title", Weight: 10},
+			{Name: "abstract"},
 		},
 		Sort: []map[string]string{
 			{"_score": "asc"},
