@@ -43,13 +43,11 @@ type BookService interface {
 	DeleteBook(id int) error
 }
 
-// Validate is a WIP. Its implementation remains to be done.
-//
 // Validate return a non-nil error if the book receiver does not match
 // the validation requirements.
 func (b Book) Validate() error {
 	return validation.ValidateStruct(&b,
-		validation.Field(&b.Title, validation.Required, validation.Length(1, 10)),
+		validation.Field(&b.Title, validation.Required, validation.Length(1, 100)),
 		validation.Field(&b.Abstract, validation.Required),
 		validation.Field(&b.Author, validation.By(func(_ interface{}) error {
 			return b.Author.Validate()
@@ -57,13 +55,11 @@ func (b Book) Validate() error {
 	)
 }
 
-// Validate is a WIP. Its implementation remains to be done.
-//
-// Validate return a non-nil error if the book receiver does not match
+// Validate return a non-nil error if the author receiver does not match
 // the validation requirements.
 func (a Author) Validate() error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.Firstname, validation.Required, is.ASCII),
-		validation.Field(&a.Lastname, validation.Required, is.ASCII),
+		validation.Field(&a.Firstname, validation.Required, is.ASCII, validation.Length(1, 50)),
+		validation.Field(&a.Lastname, validation.Required, is.ASCII, validation.Length(1, 50)),
 	)
 }
