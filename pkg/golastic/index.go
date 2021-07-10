@@ -1,54 +1,56 @@
 package golastic
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"log"
-
-	"github.com/clarketm/json"
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"strings"
 )
 
-// BulkIndex indexes the given documents array in bulk.
-func BulkIndex(index string, client *elasticsearch.Client, docs []interface{}) error {
-	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Index:  index,
-		Client: client,
-	})
+// IndexExists returns true when the index already exists in the repository.
+func IndexExists(c ContextConfig) (bool, error) {
+	res, err := c.Client.Indices.Exists([]string{c.IndexName})
+	if err != nil {
+		return false, err
+	}
+	switch res.StatusCode {
+	case 200:
+		return true, nil
+	case 404:
+		return false, nil
+	default:
+		return false, fmt.Errorf("[%s]", res.Status())
+	}
+}
+
+// CreateIndex creates a new index with mapping.
+func CreateIndex(c ContextConfig, mapping string) error {
+	res, err := c.Client.Indices.Create(
+		c.IndexName,
+		c.Client.Indices.Create.WithBody(strings.NewReader(mapping)),
+	)
 	if err != nil {
 		return err
 	}
 
-	for _, b := range docs {
-		payload, err := json.Marshal(b)
-		if err != nil {
-			return err
-		}
-
-		if err := bi.Add(context.Background(), esutil.BulkIndexerItem{
-			Action: "index",
-			Body:   bytes.NewReader(payload),
-			OnFailure: func(_ context.Context, _ esutil.BulkIndexerItem, _ esutil.BulkIndexerResponseItem, e error) {
-				err = fmt.Errorf("error: %s", e)
-			},
-		}); err != nil {
-			return err
-		}
-	}
-
-	if err := bi.Close(context.Background()); err != nil {
+	if err := ReadErrorResponse(res); err != nil {
 		return err
 	}
 
-	biStats := bi.Stats()
+	return nil
+}
 
-	if biStats.NumFailed > 0 {
-		log.Printf("indexed [%d] documents with [%d] errors", biStats.NumFlushed, biStats.NumFailed)
-	} else {
-		log.Printf("Sucessfuly indexed [%d] documents", biStats.NumFlushed)
+// CreateIndexIfNotExists creates a new index with mapping
+// if the index does not exists yet on the client.
+func CreateIndexIfNotExists(c ContextConfig, mapping string) error {
+	exists, err := IndexExists(c)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
 	}
 
-	return nil
+	log.Println("Creating Elasticsearch index with mapping")
+
+	return CreateIndex(c, mapping)
 }

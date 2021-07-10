@@ -72,20 +72,13 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	cfg := repository.Config{
 		Client:    client,
 		IndexName: env["ELASTICSEARCH_INDEX"],
+		Mapping:   mapping,
 	}
 
 	repo, err := repository.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
-
-	if err := repo.CreateIndexIfNotExists(mapping); err != nil {
-		return nil, err
-	}
-
-	// if err := printESClientInfo(repo); err != nil {
-	// 	return nil, err
-	// }
 
 	if c.populate {
 		log.Println("Populating Elasticsearch with mockup data")
@@ -99,15 +92,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	}
 
 	return repo, nil
-}
-
-func printESClientInfo(repo *repository.Repository) error {
-	res, err := repo.Info()
-	if err != nil {
-		return err
-	}
-	log.Println(res)
-	return nil
 }
 
 func executeSearch(repo *repository.Repository, query string) error {

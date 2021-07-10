@@ -3,8 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"log"
-	"strings"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -15,6 +13,7 @@ import (
 type Config struct {
 	Client    *elasticsearch.Client
 	IndexName string
+	Mapping   string
 }
 
 // Repository allows to index and search documents.
@@ -30,52 +29,17 @@ func New(c Config) (*Repository, error) {
 	}
 
 	repo := Repository{es: c.Client, indexName: c.IndexName}
+
+	cfg := golastic.ContextConfig{
+		IndexName: repo.indexName,
+		Client:    repo.es,
+	}
+
+	if err := golastic.CreateIndexIfNotExists(cfg, c.Mapping); err != nil {
+		return &Repository{}, fmt.Errorf("cannot create index: %s", err)
+	}
+
 	return &repo, nil
-}
-
-// CreateIndexIfNotExists creates a new index with mapping
-// if the repository's unique index does not exists yet.
-func (r *Repository) CreateIndexIfNotExists(mapping string) error {
-	exists, err := r.indexExists()
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
-	log.Println("Creating Elasticsearch index with mapping")
-	return r.createIndex(mapping)
-}
-
-// indexExists returns true when the index already exists in the repository.
-func (r *Repository) indexExists() (bool, error) {
-	res, err := r.es.Indices.Exists([]string{r.indexName})
-	if err != nil {
-		return false, err
-	}
-	switch res.StatusCode {
-	case 200:
-		return true, nil
-	case 404:
-		return false, nil
-	default:
-		return false, fmt.Errorf("[%s]", res.Status())
-	}
-}
-
-// createIndex creates a new index with mapping.
-func (r *Repository) createIndex(mapping string) error {
-	res, err := r.es.Indices.Create(r.indexName, r.es.Indices.Create.WithBody(strings.NewReader(mapping)))
-	if err != nil {
-		return err
-	}
-
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Info returns basic information about the Elasticsearch client.
