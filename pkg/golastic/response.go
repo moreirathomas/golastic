@@ -2,6 +2,7 @@ package golastic
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
@@ -62,4 +63,12 @@ func UnwrapSearchResponse(res *esapi.Response, doc Document) (SearchResults, err
 	}
 
 	return results, nil
+}
+
+func ReadErrorResponse(res *esapi.Response) error {
+	defer res.Body.Close()
+	if res.IsError() {
+		return fmt.Errorf("error: %s", res)
+	}
+	return nil
 }

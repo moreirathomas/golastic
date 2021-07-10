@@ -8,6 +8,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/moreirathomas/golastic/pkg/golastic"
 )
 
 // Config configures the repository.
@@ -70,9 +71,8 @@ func (r *Repository) createIndex(mapping string) error {
 		return err
 	}
 
-	defer res.Body.Close()
-	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
+	if err := golastic.ReadErrorResponse(res); err != nil {
+		return err
 	}
 
 	return nil

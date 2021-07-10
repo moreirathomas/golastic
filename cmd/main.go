@@ -111,13 +111,13 @@ func printESClientInfo(repo *repository.Repository) error {
 }
 
 func executeSearch(repo *repository.Repository, query string) error {
-	res, err := repo.Search(query)
+	res, err := repo.SearchBooks(query)
 	if err != nil {
 		return err
 	}
 
-	log.Println(res.Total)
-	for _, hit := range res.Hits {
+	log.Println(len(res))
+	for _, hit := range res {
 		log.Printf("%#v", hit)
 	}
 
@@ -131,7 +131,7 @@ func populateWithMockup(repo *repository.Repository) error {
 		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also"},
 	}
 
-	if err := repo.CreateBulk(books); err != nil {
+	if err := repo.InsertManyBooks(books); err != nil {
 		return err
 	}
 

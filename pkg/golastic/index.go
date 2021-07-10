@@ -1,47 +1,27 @@
-package repository
+package golastic
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
+	"github.com/clarketm/json"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/moreirathomas/golastic/internal"
 )
 
-// Create indexes a new book document.
-func (r *Repository) Create(book internal.Book) error {
-	payload, err := json.Marshal(book)
-	if err != nil {
-		return err
-	}
-
-	res, err := r.es.Index(r.indexName, bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
-	}
-
-	return nil
-}
-
-// CreateBulk indexes multiple new book documents at once.
-func (r *Repository) CreateBulk(books []internal.Book) error {
+// BulkIndex indexes the given documents array in bulk.
+func BulkIndex(index string, client *elasticsearch.Client, docs []interface{}) error {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Index:  r.indexName,
-		Client: r.es,
+		Index:  index,
+		Client: client,
 	})
 	if err != nil {
 		return err
 	}
 
-	for _, b := range books {
+	for _, b := range docs {
 		payload, err := json.Marshal(b)
 		if err != nil {
 			return err
