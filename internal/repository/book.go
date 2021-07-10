@@ -112,7 +112,12 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 		in[i] = b
 	}
 
-	return golastic.BulkIndex(r.indexName, r.es, in)
+	cfg := golastic.ContextConfig{
+		IndexName: r.indexName,
+		Client:    r.es,
+	}
+
+	return golastic.BulkIndex(cfg, in)
 }
 
 // UpdateBook updates the specified book with a partial book input.

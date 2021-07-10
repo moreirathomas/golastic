@@ -2,17 +2,9 @@ package golastic
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
-
-// Document provides a NewHit method that should unmarshal a json result
-// obtained from an ElasticSearch search response.
-// It should return your own entity and an error.
-type Document interface {
-	NewHit(id string, src json.RawMessage) (interface{}, error)
-}
 
 // SearchResults is a simplified result of an ElasticSearch output.
 type SearchResults struct {
@@ -63,12 +55,4 @@ func UnwrapSearchResponse(res *esapi.Response, doc Document) (SearchResults, err
 	}
 
 	return results, nil
-}
-
-func ReadErrorResponse(res *esapi.Response) error {
-	defer res.Body.Close()
-	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
-	}
-	return nil
 }
