@@ -2,29 +2,20 @@ package http
 
 import (
 	"net/http"
-
-	"github.com/moreirathomas/golastic/pkg/elasticsearch"
 )
 
 // SearchBooks retrieves all books matching the query string,
 // either in their title or in their abstract.
 func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	// Retrieve user's query string
-	urlQuery, err := s.readURLQuery(r, "query")
-	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
-		return
-	}
-
-	// Build ElasticSearch query from user input
-	esQuery, err := elasticsearch.BuildSearchQuery(urlQuery)
+	q, err := s.readURLQuery(r, "query")
 	if err != nil {
 		respondHTTPError(w, ErrBadRequest.Wrap(err))
 		return
 	}
 
 	// Perform ElasticSearch query
-	results, err := s.Repository.SearchBooks(esQuery)
+	results, err := s.Repository.SearchBooks(q)
 	if err != nil {
 		respondHTTPError(w, ErrInternal.Wrap(err))
 		return
