@@ -25,9 +25,8 @@ type Document interface {
 // ReadErrorResponse reads the response body and returns an error if
 // the response status indicates failure.
 func ReadErrorResponse(res *esapi.Response) error {
-	defer res.Body.Close()
 	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
+		return fmt.Errorf("elasticsearch error: %s", res)
 	}
 	return nil
 }

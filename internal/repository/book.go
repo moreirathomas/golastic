@@ -46,6 +46,7 @@ func (r *Repository) search(query string) (*golastic.SearchResults, error) {
 		return &results, err
 	}
 
+	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
 		return &results, err
 	}
@@ -98,6 +99,7 @@ func (r Repository) InsertBook(b internal.Book) error {
 		return err
 	}
 
+	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
 		return err
 	}
@@ -132,6 +134,7 @@ func (r Repository) UpdateBook(b internal.Book) error {
 		return err
 	}
 
+	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
 		return err
 	}
@@ -146,6 +149,7 @@ func (r Repository) DeleteBook(id string) error {
 		return err
 	}
 
+	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
 		return err
 	}

@@ -32,8 +32,9 @@ func CreateIndex(c ContextConfig, mapping string) error {
 		return err
 	}
 
-	if err := ReadErrorResponse(res); err != nil {
-		return err
+	defer res.Body.Close()
+	if res.IsError() {
+		return fmt.Errorf("error: %s", res)
 	}
 
 	return nil
