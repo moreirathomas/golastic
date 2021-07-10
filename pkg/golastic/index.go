@@ -2,7 +2,6 @@ package golastic
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -42,16 +41,15 @@ func CreateIndex(c ContextConfig, mapping string) error {
 
 // CreateIndexIfNotExists creates a new index with mapping
 // if the index does not exists yet on the client.
-func CreateIndexIfNotExists(c ContextConfig, mapping string) error {
+// It returns true if the index is being created.
+func CreateIndexIfNotExists(c ContextConfig, mapping string) (bool, error) {
 	exists, err := IndexExists(c)
-	if err != nil {
-		return err
+	switch {
+	case err != nil:
+		return false, err
+	case exists:
+		return false, nil
+	default:
+		return true, CreateIndex(c, mapping)
 	}
-	if exists {
-		return nil
-	}
-
-	log.Println("Creating Elasticsearch index with mapping")
-
-	return CreateIndex(c, mapping)
 }

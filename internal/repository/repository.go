@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -30,16 +31,26 @@ func New(c Config) (*Repository, error) {
 
 	repo := Repository{es: c.Client, indexName: c.IndexName}
 
-	cfg := golastic.ContextConfig{
-		IndexName: repo.indexName,
-		Client:    repo.es,
-	}
-
-	if err := golastic.CreateIndexIfNotExists(cfg, c.Mapping); err != nil {
-		return &Repository{}, fmt.Errorf("cannot create index: %s", err)
-	}
+	repo.setupIndex(c.Mapping)
 
 	return &repo, nil
+}
+
+func (r *Repository) setupIndex(mapping string) error {
+	cfg := golastic.ContextConfig{
+		IndexName: r.indexName,
+		Client:    r.es,
+	}
+
+	isCreate, err := golastic.CreateIndexIfNotExists(cfg, mapping)
+	if isCreate {
+		log.Println("Creating Elasticsearch index with mapping")
+	}
+	if err != nil {
+		return fmt.Errorf("cannot create index: %s", err)
+	}
+
+	return nil
 }
 
 // Info returns basic information about the Elasticsearch client.
