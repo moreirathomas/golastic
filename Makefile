@@ -4,6 +4,26 @@
 run:
 	@go run ./cmd/main.go
 
+.PHONY: docker
+docker:
+	@docker-compose --env-file ./.env up --build
+
+.PHONY: docker-down
+docker-down:
+	@docker-compose -env-file ./.env down
+
+.PHONY: docker-flush
+docker-flush:
+	@docker-compose -env-file ./.env down --volumes
+
+.PHONY: elasticsearch
+elasticsearch:
+	@docker-compose --env-file ./.env up --build elasticsearch
+
+.PHONY: kibana
+kibana:
+	@docker-compose --env-file ./.env up --build kibana
+
 # Test commands
 
 .PHONY: test
