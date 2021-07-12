@@ -84,10 +84,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 		return nil, err
 	}
 
-	// if err := printESClientInfo(repo); err != nil {
-	// 	return nil, err
-	// }
-
 	if c.populate {
 		log.Println("Populating Elasticsearch with mockup data")
 		if err := populateWithMockup(repo); err != nil {
@@ -100,15 +96,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	}
 
 	return repo, nil
-}
-
-func printESClientInfo(repo *repository.Repository) error {
-	res, err := repo.Info()
-	if err != nil {
-		return err
-	}
-	log.Println(res)
-	return nil
 }
 
 func executeSearch(repo *repository.Repository, query string) error {
