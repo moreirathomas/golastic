@@ -20,15 +20,23 @@ func (r Repository) SearchBooks(userQuery string) ([]internal.Book, error) {
 
 	log.Printf("Retrieved %d books\n", res.Total)
 
-	books := make([]internal.Book, 0, res.Total)
-	for _, hit := range res.Hits {
-		b, ok := hit.(internal.Book)
+	books, err := unmarshalBooks(res.Hits)
+	if err != nil {
+		return books, fmt.Errorf("failed to unmarshal books: %w", err)
+	}
+
+	return books, nil
+}
+
+func unmarshalBooks(hits []interface{}) ([]internal.Book, error) {
+	books := make([]internal.Book, 0, len(hits))
+	for _, h := range hits {
+		b, ok := h.(internal.Book)
 		if !ok {
-			return books, fmt.Errorf("hit has invalid book format: %#v", hit)
+			return books, fmt.Errorf("hit has invalid book format: %#v", h)
 		}
 		books = append(books, b)
 	}
-
 	return books, nil
 }
 
