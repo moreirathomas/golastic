@@ -13,7 +13,7 @@ const (
 	defaultQuerySize = 10
 )
 
-// SearchQuery represents an ElasticSearch search query.
+// SearchQuery represents an Elasticsearch search query.
 // It can be built via NewQuery or NewDefaultQuery.
 // It exposes methods to easily retrieve its value
 // as bytes, string or via io.Reader.
@@ -50,7 +50,7 @@ func (q SearchQuery) Reader() io.Reader {
 
 // Field is a field name associated with an optional weight.
 // It provides marshaling methods allowing to comply automatically
-// with ElasticSearch syntax for fields in a query (see MarshalText)
+// with Elasticsearch syntax for fields in a query (see MarshalText)
 type Field struct {
 	Name   string
 	Weight int
@@ -60,7 +60,7 @@ type Field struct {
 // and a nil error.
 //
 // It is automatically called by json.Marshal when it encounters
-// a Field value. We use it to format the ElasticSearch query.
+// a Field value. We use it to format the Elasticsearch query.
 //
 // For instance, marshaling the following:
 //
@@ -79,7 +79,7 @@ func (f Field) MarshalText() ([]byte, error) {
 }
 
 // String returns a string representation of the field in the format
-// expected by ElasticSearch.
+// expected by Elasticsearch.
 //
 // Examples:
 //
@@ -110,7 +110,7 @@ func MatchAllSearchQuery(size int) SearchQuery {
 }
 
 // SearchQueryConfig is a flattened representation of injectable values
-// in an ElasticSearch query. The values are then injectected
+// in an Elasticsearch query. The values are then injectected
 // in the right place via NewQuery.
 // It allows to define a Query conveniently, without having to
 // reproduce the whole structure.

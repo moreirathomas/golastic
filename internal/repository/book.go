@@ -81,10 +81,41 @@ func buildSearchQuery(s string) io.Reader {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	// FIXME we need to declare a type for GET api before
-	// unmarshalling the response to a Book.
-	// return r.Get(id)
-	return internal.Book{}, nil
+	res, err := r.get(id)
+
+	if err != nil {
+		return internal.Book{}, err
+	}
+
+	var book internal.Book
+
+	book, ok := res.(internal.Book)
+	if !ok {
+		return book, fmt.Errorf("response has invalid book format: %#v", res)
+	}
+
+	return book, nil
+}
+
+func (r Repository) get(id string) (interface{}, error) {
+	var result interface{}
+
+	res, err := r.es.Get(r.indexName, id)
+	if err != nil {
+		return result, err
+	}
+
+	defer res.Body.Close()
+	if err := golastic.ReadErrorResponse(res); err != nil {
+		return result, err
+	}
+
+	result, err = golastic.UnwrapGetResponse(res, internal.Book{})
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
 // InsertBook indexes a new book.

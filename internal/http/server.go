@@ -53,13 +53,13 @@ func (s *Server) registerRoutes() {
 	s.router.HandleFunc("/books", s.SearchBooks).Methods(http.MethodGet)
 
 	// Get book by ID
-	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.GetBookByID).Methods(http.MethodGet)
+	s.router.HandleFunc("/books/{bookID:[a-zA-Z0-9]+}", s.GetBookByID).Methods(http.MethodGet)
 
 	// Update book
-	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.UpdateBook).Methods(http.MethodPut)
+	s.router.HandleFunc("/books/{bookID:[a-zA-Z0-9]+}", s.UpdateBook).Methods(http.MethodPut)
 
 	// Delete book by ID
-	s.router.HandleFunc("/books/{bookID:[0-9]+}", s.DeleteBook).Methods(http.MethodDelete)
+	s.router.HandleFunc("/books/{bookID:[a-zA-Z0-9]+}", s.DeleteBook).Methods(http.MethodDelete)
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
