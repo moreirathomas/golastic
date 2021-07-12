@@ -50,7 +50,7 @@ func main() {
 }
 
 func run(envPath string, c MockupConfig) error {
-	if err := dotenv.Load(envPath, &env); err != nil {
+	if err := dotenv.Load(envPath, env); err != nil {
 		return err
 	}
 
