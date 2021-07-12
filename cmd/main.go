@@ -119,9 +119,5 @@ func populateWithMockup(repo *repository.Repository) error {
 		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also"},
 	}
 
-	if err := repo.CreateBulk(books); err != nil {
-		return err
-	}
-
-	return nil
+	return repo.CreateBulk(books)
 }
