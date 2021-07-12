@@ -34,7 +34,6 @@ type SearchQuery struct {
 
 // Bytes returns the raw query as bytes.
 func (q SearchQuery) Bytes() []byte {
-	// b, _ := json.MarshalIndent(q, "", "  ")
 	b, _ := json.Marshal(q)
 	return b
 }
