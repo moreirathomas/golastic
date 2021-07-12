@@ -17,7 +17,7 @@ func respondJSON(w http.ResponseWriter, code int, data interface{}) {
 
 	resp, err := json.Marshal(data)
 	if err != nil {
-		respondHTTPError(w, ErrInternal)
+		respondHTTPError(w, errInternal)
 		return
 	}
 	w.Write(resp)
@@ -25,8 +25,8 @@ func respondJSON(w http.ResponseWriter, code int, data interface{}) {
 
 // respondHTTPError formats the given error and sends it as JSON.
 // Parameter `httpErr` sets the status code.
-func respondHTTPError(w http.ResponseWriter, httpErr HTTPError) {
-	resp := map[string]HTTPError{
+func respondHTTPError(w http.ResponseWriter, httpErr httpError) {
+	resp := map[string]httpError{
 		"error": httpErr,
 	}
 	respondJSON(w, httpErr.Code, resp)
