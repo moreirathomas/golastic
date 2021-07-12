@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/httputil"
 )

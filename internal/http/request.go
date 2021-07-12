@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/moreirathomas/golastic/internal"
 )
 

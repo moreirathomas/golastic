@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+
 	"github.com/moreirathomas/golastic/internal"
 )
 
