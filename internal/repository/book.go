@@ -20,7 +20,7 @@ func (r Repository) SearchBooks(userQuery string) ([]internal.Book, error) {
 
 	log.Printf("Retrieved %d books\n", res.Total)
 
-	var books []internal.Book
+	books := make([]internal.Book, 0, res.Total)
 	for _, hit := range res.Hits {
 		b, ok := hit.(internal.Book)
 		if !ok {
