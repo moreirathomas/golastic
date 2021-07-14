@@ -10,14 +10,14 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	// Retrieve user's query string
 	q, err := s.readURLQuery(r, "query")
 	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
 	// Perform ElasticSearch query
 	results, err := s.Repository.SearchBooks(q)
 	if err != nil {
-		respondHTTPError(w, ErrInternal.Wrap(err))
+		respondHTTPError(w, errInternal.Wrap(err))
 		return
 	}
 
@@ -28,13 +28,13 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 func (s Server) GetBookByID(w http.ResponseWriter, r *http.Request) {
 	id, err := extractID(r, "bookID")
 	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
 	book, err := s.Repository.GetBookByID(id)
 	if err != nil {
-		respondHTTPError(w, ErrNotFound.Wrap(err))
+		respondHTTPError(w, errNotFound.Wrap(err))
 		return
 	}
 
@@ -45,13 +45,13 @@ func (s Server) GetBookByID(w http.ResponseWriter, r *http.Request) {
 func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 	book, err := readBookPayload(r.Body)
 	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
 	if err := s.Repository.InsertBook(book); err != nil {
 		// TODO: specify error handling (could be a duplicate or internal error)
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
@@ -62,13 +62,13 @@ func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 func (s Server) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	book, err := readBookPayload(r.Body)
 	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
 	if err := s.Repository.UpdateBook(book); err != nil {
 		// TODO: specify error handling (could be a duplicate or internal error)
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
@@ -78,13 +78,13 @@ func (s Server) UpdateBook(w http.ResponseWriter, r *http.Request) {
 func (s Server) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	id, err := extractID(r, "bookID")
 	if err != nil {
-		respondHTTPError(w, ErrBadRequest.Wrap(err))
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
 	if err := s.Repository.DeleteBook(id); err != nil {
 		// TODO: specify error handling (could be internal)
-		respondHTTPError(w, ErrNotFound.Wrap(err))
+		respondHTTPError(w, errNotFound.Wrap(err))
 	}
 
 	respondJSON(w, 204, nil)

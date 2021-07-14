@@ -7,16 +7,18 @@ import (
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v7"
+
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/internal/http"
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/dotenv"
 )
 
-const defaultEnvPath = "./.env"
+const defaultEnvFile = "./.env.local"
 
 var env = map[string]string{
 	"ELASTICSEARCH_INDEX": "",
+	"ELASTICSEARCH_URL":   "",
 	"SERVER_PORT":         "",
 }
 
@@ -24,22 +26,20 @@ var env = map[string]string{
 var mapping string
 
 func main() {
-	// TODO temporary flags
+	envPath := flag.String("env-file", defaultEnvFile, "environment file path")
 	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
 	flag.Parse()
 
-	envPath := dotenv.GetPath(defaultEnvPath)
+	if err := dotenv.Load(*envPath, env); err != nil {
+		log.Fatal(err)
+	}
 
-	if err := run(envPath, *populate); err != nil {
+	if err := run(*populate); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string, populate bool) error {
-	if err := dotenv.Load(envPath, &env); err != nil {
-		return err
-	}
-
+func run(populate bool) error {
 	repo, err := initClient()
 	if err != nil {
 		return err
@@ -58,7 +58,9 @@ func run(envPath string, populate bool) error {
 }
 
 func initClient() (*repository.Repository, error) {
-	client, err := elasticsearch.NewDefaultClient()
+	client, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{env["ELASTICSEARCH_URL"]},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating Elasticsearch client: %s", err)
 	}

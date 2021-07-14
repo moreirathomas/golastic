@@ -3,7 +3,6 @@ package golastic
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/clarketm/json"
@@ -19,9 +18,10 @@ func BulkIndex(c ContextConfig, docs []interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer bi.Close(context.Background())
 
-	for _, b := range docs {
-		payload, err := json.Marshal(b)
+	for _, doc := range docs {
+		payload, err := json.Marshal(doc)
 		if err != nil {
 			return err
 		}
@@ -30,24 +30,22 @@ func BulkIndex(c ContextConfig, docs []interface{}) error {
 			Action: "index",
 			Body:   bytes.NewReader(payload),
 			OnFailure: func(_ context.Context, _ esutil.BulkIndexerItem, _ esutil.BulkIndexerResponseItem, e error) {
-				err = fmt.Errorf("error: %s", e)
+				log.Printf("failed to index document %#v: %s", doc, e)
 			},
 		}); err != nil {
 			return err
 		}
 	}
 
-	if err := bi.Close(context.Background()); err != nil {
-		return err
-	}
-
-	biStats := bi.Stats()
-
-	if biStats.NumFailed > 0 {
-		log.Printf("indexed [%d] documents with [%d] errors", biStats.NumFlushed, biStats.NumFailed)
-	} else {
-		log.Printf("Sucessfuly indexed [%d] documents", biStats.NumFlushed)
-	}
-
+	logBulkIndexerStats(bi)
 	return nil
+}
+
+func logBulkIndexerStats(bi esutil.BulkIndexer) {
+	stats := bi.Stats()
+	if stats.NumFailed > 0 {
+		log.Printf("indexed [%d] documents with [%d] errors", stats.NumFlushed, stats.NumFailed)
+	} else {
+		log.Printf("Successfully indexed [%d] documents", stats.NumFlushed)
+	}
 }

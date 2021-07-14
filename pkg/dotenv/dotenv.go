@@ -19,7 +19,7 @@ func GetPath(defaultPath string) string {
 
 // Load reads values from the given filepath and copies them to dst.
 // It returns an error if any variable is missing.
-func Load(filepath string, dst *map[string]string) error {
+func Load(filepath string, dst map[string]string) error {
 	// Read env file
 	envMap, err := godotenv.Read(filepath)
 	if err != nil {
@@ -28,11 +28,11 @@ func Load(filepath string, dst *map[string]string) error {
 
 	// Set env values and catch the missing ones
 	missingEnv := []string{}
-	for k := range *dst {
+	for k := range dst {
 		if v, ok := envMap[k]; !ok {
 			missingEnv = append(missingEnv, k)
 		} else {
-			(*dst)[k] = v
+			dst[k] = v
 		}
 	}
 
