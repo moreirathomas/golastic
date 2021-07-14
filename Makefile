@@ -1,30 +1,26 @@
-# Run server
-
-.PHONY: run
-run:
-	@go run ./cmd/main.go
-
-# Docker
+# Docker build
 
 .PHONY: docker
 docker:
-	@docker-compose --env-file ./.env up --build
+	@docker-compose --env-file ./.env.docker up --build
 
 .PHONY: docker-down
 docker-down:
-	@docker-compose -env-file ./.env down
+	@docker-compose --env-file ./.env.docker down
 
-.PHONY: docker-flush
-docker-flush:
-	@docker-compose -env-file ./.env down --volumes
+# Local develpment
 
-.PHONY: elasticsearch
-elasticsearch:
-	@docker-compose --env-file ./.env up --build elasticsearch
+.PHONY: local
+local:
+	@docker-compose --env-file ./.env.local up --build elasticsearch kibana
 
-.PHONY: kibana
-kibana:
-	@docker-compose --env-file ./.env up --build kibana
+.PHONY: local-down
+local-down:
+	@docker-compose --env-file ./.env.local down
+
+.PHONY: local-server
+local-server:
+	@go run ./cmd/main.go --env-file ./.env.local
 
 # Lint commends
 

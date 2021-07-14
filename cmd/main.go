@@ -14,10 +14,11 @@ import (
 	"github.com/moreirathomas/golastic/pkg/dotenv"
 )
 
-const defaultEnvPath = "./.env"
+const defaultEnvFile = "./.env.local"
 
 var env = map[string]string{
 	"ELASTICSEARCH_INDEX": "",
+	"ELASTICSEARCH_URL":   "",
 	"SERVER_PORT":         "",
 }
 
@@ -32,28 +33,26 @@ type MockupConfig struct {
 var mapping string
 
 func main() {
-	// TODO temporary flags
+	envPath := flag.String("env-file", defaultEnvFile, "environment file path")
 	query := flag.String("q", "foo", "String value used to search for a match")
 	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
 	flag.Parse()
 
-	envPath := dotenv.GetPath(defaultEnvPath)
+	if err := dotenv.Load(*envPath, env); err != nil {
+		log.Fatal(err)
+	}
 
 	cfg := MockupConfig{
 		query:    *query,
 		populate: *populate,
 	}
 
-	if err := run(envPath, cfg); err != nil {
+	if err := run(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(envPath string, c MockupConfig) error {
-	if err := dotenv.Load(envPath, env); err != nil {
-		return err
-	}
-
+func run(c MockupConfig) error {
 	repo, err := initClient(c)
 	if err != nil {
 		return err
@@ -65,7 +64,9 @@ func run(envPath string, c MockupConfig) error {
 }
 
 func initClient(c MockupConfig) (*repository.Repository, error) {
-	client, err := elasticsearch.NewDefaultClient()
+	client, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{env["ELASTICSEARCH_URL"]},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating Elasticsearch client: %s", err)
 	}

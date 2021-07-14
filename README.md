@@ -4,21 +4,27 @@ Golastic is a web API offering full text search on a books collection with Elast
 
 ## Get started
 
-### Prerequisites
+### Simple usage
 
-- Go 1.16 is required ([for now](https://github.com/moreirathomas/golastic/issues/17)).
-- A working version of Docker with docker-compose is required
-- You must provide a `.env` file inside the root directory.
-    For a quick start, you can use the values from the provided example:
+- Make sure you have [Docker](https://docs.docker.com/get-docker/) installed.
+- Build the app with the following command:
+  ```sh
+  make
 
-    ```sh
-    echo "$(cat .env.example)" >> .env
-    ```
+  # equivalent to:
+	docker-compose --env-file ./.env.docker up --build
+  ```
 
-#### Development-only prerequisites
+That's it! The app is ready to be used.
+See [Queries](#queries) to learn about our available queries.
 
-- Go 1.16 is required
-- [golangci-lint](https://golangci-lint.run/) is recommended to run the linters
+### Local development
+
+#### Prerequisites
+
+- A working version of [Docker](https://docs.docker.com/get-docker/) for elasticsearch and kibana instances
+- [Go 1.16](https://golang.org/doc/install) minimum is required due to the use of lastest features, such as `go:embed`
+- [golangci-lint](https://golangci-lint.run/) is recommended to run the linters before pushing:
   ```sh
   make lint
 
@@ -26,25 +32,25 @@ Golastic is a web API offering full text search on a books collection with Elast
   golangci-lint run
   ```
 
-### Run the app
+#### Run the local server
 
 - run Elasticsearch and Kibana instances
 
-    ```sh
-    make docker
+  ```sh
+  make local
 
-    # or
-    docker-compose --env-file ./.env up --build
-    ```
+  # equivalent to:
+  docker-compose --env-file ./.env.local up --build
+  ```
 
-- run the Go server
+- run the server locally
 
-    ```sh
-    make
+  ```sh
+  make local-server
 
-    # or
-    go run cmd/main.go
-    ```
+  # equivalent to:
+  go run cmd/main.go
+  ```
 
 ### Queries
 

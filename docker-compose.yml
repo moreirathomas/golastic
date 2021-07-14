@@ -1,6 +1,19 @@
 version: '3'
 
 services:
+  web:
+    container_name: golastic_web
+    build: .
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT
+    networks:
+      - golastic
+    ports:
+      - 9999:9999
+
   elasticsearch:
     container_name: golastic_elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
