@@ -1,8 +1,10 @@
-# Run
+# Run server
 
 .PHONY: run
 run:
 	@go run ./cmd/main.go
+
+# Docker
 
 .PHONY: docker
 docker:
@@ -23,6 +25,12 @@ elasticsearch:
 .PHONY: kibana
 kibana:
 	@docker-compose --env-file ./.env up --build kibana
+
+# Lint commends
+
+.PHONY: lint
+lint:
+	@golangci-lint run
 
 # Test commands
 

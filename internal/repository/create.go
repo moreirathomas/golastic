@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+
 	"github.com/moreirathomas/golastic/internal"
 )
 
@@ -40,6 +41,7 @@ func (r *Repository) CreateBulk(books []internal.Book) error {
 	if err != nil {
 		return err
 	}
+	defer bi.Close(context.Background())
 
 	for _, b := range books {
 		payload, err := json.Marshal(b)
@@ -51,24 +53,22 @@ func (r *Repository) CreateBulk(books []internal.Book) error {
 			Action: "index",
 			Body:   bytes.NewReader(payload),
 			OnFailure: func(_ context.Context, _ esutil.BulkIndexerItem, _ esutil.BulkIndexerResponseItem, e error) {
-				err = fmt.Errorf("error: %s", e)
+				log.Printf("failed to index book %s: %s", b.ID, e)
 			},
 		}); err != nil {
 			return err
 		}
 	}
 
-	if err := bi.Close(context.Background()); err != nil {
-		return err
-	}
-
-	biStats := bi.Stats()
-
-	if biStats.NumFailed > 0 {
-		log.Printf("indexed [%d] documents with [%d] errors", biStats.NumFlushed, biStats.NumFailed)
-	} else {
-		log.Printf("Sucessfuly indexed [%d] documents", biStats.NumFlushed)
-	}
-
+	logBulkIndexerStats(bi)
 	return nil
+}
+
+func logBulkIndexerStats(bi esutil.BulkIndexer) {
+	stats := bi.Stats()
+	if stats.NumFailed > 0 {
+		log.Printf("indexed [%d] documents with [%d] errors", stats.NumFlushed, stats.NumFailed)
+	} else {
+		log.Printf("Successfully indexed [%d] documents", stats.NumFlushed)
+	}
 }

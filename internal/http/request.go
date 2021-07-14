@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/moreirathomas/golastic/internal"
 )
 
@@ -46,10 +47,7 @@ func decodeBody(body io.ReadCloser, dest interface{}) error {
 	decoder := json.NewDecoder(body)
 	decoder.DisallowUnknownFields()
 
-	if err := decoder.Decode(dest); err != nil {
-		return err
-	}
-	return nil
+	return decoder.Decode(dest)
 }
 
 func readBookPayload(body io.ReadCloser) (internal.Book, error) {

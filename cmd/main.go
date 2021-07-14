@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v7"
+
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/internal/http"
 	"github.com/moreirathomas/golastic/internal/repository"
@@ -49,7 +50,7 @@ func main() {
 }
 
 func run(envPath string, c MockupConfig) error {
-	if err := dotenv.Load(envPath, &env); err != nil {
+	if err := dotenv.Load(envPath, env); err != nil {
 		return err
 	}
 
@@ -83,10 +84,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 		return nil, err
 	}
 
-	// if err := printESClientInfo(repo); err != nil {
-	// 	return nil, err
-	// }
-
 	if c.populate {
 		log.Println("Populating Elasticsearch with mockup data")
 		if err := populateWithMockup(repo); err != nil {
@@ -99,15 +96,6 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	}
 
 	return repo, nil
-}
-
-func printESClientInfo(repo *repository.Repository) error {
-	res, err := repo.Info()
-	if err != nil {
-		return err
-	}
-	log.Println(res)
-	return nil
 }
 
 func executeSearch(repo *repository.Repository, query string) error {
@@ -131,9 +119,5 @@ func populateWithMockup(repo *repository.Repository) error {
 		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also"},
 	}
 
-	if err := repo.CreateBulk(books); err != nil {
-		return err
-	}
-
-	return nil
+	return repo.CreateBulk(books)
 }

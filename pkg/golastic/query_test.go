@@ -1,7 +1,9 @@
-package golastic
+package golastic_test
 
 import (
 	"testing"
+
+	"github.com/moreirathomas/golastic/pkg/golastic"
 )
 
 func TestMarshaling(t *testing.T) {
@@ -13,8 +15,8 @@ func TestMarshaling(t *testing.T) {
 type marshalingTest struct{}
 
 func (test marshalingTest) fields(t *testing.T) {
-	q := SearchQuery{}
-	q.Query.MultiMatch.Fields = []Field{
+	q := golastic.SearchQuery{}
+	q.Query.MultiMatch.Fields = []golastic.Field{
 		{"title", 10},
 		{"abstract", 5},
 		{"_doc", 0},
@@ -28,7 +30,7 @@ func (test marshalingTest) fields(t *testing.T) {
 }
 
 func (test marshalingTest) sort(t *testing.T) {
-	q := SearchQuery{}
+	q := golastic.SearchQuery{}
 	q.Sort = []map[string]string{
 		{"_score": "desc"},
 		{"_doc": "asc"},
