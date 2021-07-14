@@ -45,7 +45,7 @@ func unmarshalBooks(hits []interface{}) ([]internal.Book, error) {
 }
 
 // search is a helper to encapsulate Elasticsearch interface call.
-func (r *Repository) search(query string) (*golastic.SearchResults, error) {
+func (r *Repository) search(query string) (golastic.SearchResults, error) {
 	var results golastic.SearchResults
 
 	res, err := r.es.Search(
@@ -54,20 +54,15 @@ func (r *Repository) search(query string) (*golastic.SearchResults, error) {
 		r.es.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return &results, err
+		return results, err
 	}
 
 	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
-		return &results, err
+		return results, err
 	}
 
-	results, err = golastic.UnwrapSearchResponse(res, internal.Book{})
-	if err != nil {
-		return &results, err
-	}
-
-	return &results, nil
+	return golastic.UnwrapSearchResponse(res, internal.Book{})
 }
 
 // buildSearchQuery is a helper to encapsulate Elasticsearch interface call.
@@ -120,12 +115,7 @@ func (r Repository) get(id string) (interface{}, error) {
 		return result, err
 	}
 
-	result, err = golastic.UnwrapGetResponse(res, internal.Book{})
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return golastic.UnwrapGetResponse(res, internal.Book{})
 }
 
 // InsertBook indexes a new book.
@@ -141,11 +131,7 @@ func (r Repository) InsertBook(b internal.Book) error {
 	}
 
 	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return err
-	}
-
-	return nil
+	return golastic.ReadErrorResponse(res)
 }
 
 // InsertManyBooks indexes multiple new book documents at once.
@@ -176,11 +162,7 @@ func (r Repository) UpdateBook(b internal.Book) error {
 	}
 
 	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return err
-	}
-
-	return nil
+	return golastic.ReadErrorResponse(res)
 }
 
 // DeleteBook removes the specified book from the index.
@@ -191,9 +173,5 @@ func (r Repository) DeleteBook(id string) error {
 	}
 
 	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return err
-	}
-
-	return nil
+	return golastic.ReadErrorResponse(res)
 }

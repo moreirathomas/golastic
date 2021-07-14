@@ -7,6 +7,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+
 	"github.com/moreirathomas/golastic/pkg/golastic"
 )
 
@@ -31,7 +32,9 @@ func New(c Config) (*Repository, error) {
 
 	repo := Repository{es: c.Client, indexName: c.IndexName}
 
-	repo.setupIndex(c.Mapping)
+	if err := repo.setupIndex(c.Mapping); err != nil {
+		return nil, err
+	}
 
 	return &repo, nil
 }
