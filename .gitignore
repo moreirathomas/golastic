@@ -3,3 +3,9 @@
 
 # Environment
 .env
+
+# Logs
+.logs/
+
+# Docker volumes
+.volumes/
