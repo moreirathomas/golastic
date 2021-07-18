@@ -9,15 +9,17 @@ import (
 	"github.com/moreirathomas/golastic/pkg/logger"
 )
 
+const tmpDir = "_tmp/"
+
 // Tests
 
 func TestFileWriter(t *testing.T) {
-	const filename = "hello.txt"
+	const filename = tmpDir + "logs/hello.txt"
 
 	w := logger.DefaultFile(filename).Writer()
 	testWriteString(t, w, "hello\n")
 	testWriteString(t, w, "world\n")
-	defer mustRemoveFile(filename)
+	defer mustRemoveTmpDir()
 
 	b, err := os.ReadFile(filename)
 	if err != nil {
@@ -38,8 +40,8 @@ func testWriteString(t *testing.T, w io.Writer, s string) {
 
 // Helpers
 
-func mustRemoveFile(filename string) {
-	if err := os.Remove(filename); err != nil {
-		log.Panicf("failed to remove file %s", filename)
+func mustRemoveTmpDir() {
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log.Panicf("failed to remove dir %s", tmpDir)
 	}
 }
