@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/moreirathomas/golastic/internal/repository"
-	"github.com/moreirathomas/golastic/pkg/httputil"
+	"github.com/moreirathomas/golastic/pkg/logger"
 )
 
 // Server represents the main server for the API.
@@ -38,7 +38,7 @@ func (s *Server) Start() error {
 
 func (s *Server) initRouter() {
 	s.router = mux.NewRouter().StrictSlash(true)
-	s.router.Use(httputil.RequestLogger)
+	s.router.Use(logger.Middleware)
 	s.registerRoutes()
 }
 
