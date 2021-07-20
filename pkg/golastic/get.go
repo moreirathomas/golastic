@@ -2,6 +2,7 @@ package golastic
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
@@ -25,6 +26,10 @@ func UnwrapGetResponse(res *esapi.Response, doc Document) (interface{}, error) {
 	var rw getResponseWrapper
 	if err := json.NewDecoder(res.Body).Decode(&rw); err != nil {
 		return rw, err
+	}
+
+	if !rw.Found {
+		return nil, errors.New("not found")
 	}
 
 	result, err := doc.NewHit(rw.ID, rw.Source)
