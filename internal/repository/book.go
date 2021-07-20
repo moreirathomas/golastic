@@ -151,7 +151,10 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	payload, err := json.Marshal(b)
+	// The document must be wrapped in a "doc" object
+	payload, err := json.Marshal(map[string]internal.Book{
+		"doc": b,
+	})
 	if err != nil {
 		return err
 	}

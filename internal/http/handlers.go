@@ -60,11 +60,18 @@ func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 
 // UpdateBook adds a new book in the repository, if the request is valid.
 func (s Server) UpdateBook(w http.ResponseWriter, r *http.Request) {
+	id, err := extractID(r, "bookID")
+	if err != nil {
+		respondHTTPError(w, errBadRequest.Wrap(err))
+		return
+	}
+
 	book, err := readBookPayload(r.Body)
 	if err != nil {
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
+	book.ID = id
 
 	if err := s.Repository.UpdateBook(book); err != nil {
 		// TODO: specify error handling (could be a duplicate or internal error)
