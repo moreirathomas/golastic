@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"time"
 )
 
 // SearchBooks retrieves all books matching the query string,
@@ -49,6 +50,7 @@ func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	book.CreatedAt = time.Now()
 	if err := s.Repository.InsertBook(book); err != nil {
 		// TODO: specify error handling (could be a duplicate or internal error)
 		respondHTTPError(w, errBadRequest.Wrap(err))
