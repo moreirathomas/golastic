@@ -6,20 +6,14 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
-// Document provides a NewHit method that should unmarshal a json result
-// obtained from an ElasticSearch search response.
-// It should return your own entity and an error.
-type Document interface {
-	NewHit(id string, src json.RawMessage) (interface{}, error)
-}
-
-// SearchResults is a simplified result of an ElasticSearch output.
+// SearchResults is a simplified result of an Elasticsearch output.
 type SearchResults struct {
 	Total int           `json:"total"`
 	Hits  []interface{} `json:"hits"`
 }
 
-// searchResponseWrapper represents the response of an ElasticSearch search query.
+// searchResponseWrapper represents selected fields from
+// the response to an Elasticsearch Search request.
 type searchResponseWrapper struct {
 	Took int
 	Hits struct {
@@ -34,8 +28,10 @@ type searchResponseWrapper struct {
 	}
 }
 
-// UnwrapSearchResponse reads an ElasticSearch response and returns a SearchResults
-// or the first non-nil error occurring in the process.
+// UnwrapSearchResponse reads an Elasticsearch response for a Search request
+// and returns a SearchResults or the first non-nil error occurring
+// in the process.
+//
 // It must be provided a Document to determinate the marshaling process.
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).

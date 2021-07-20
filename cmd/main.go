@@ -22,19 +22,11 @@ var env = map[string]string{
 	"SERVER_PORT":         "",
 }
 
-// MockupConfig regroups only flags that will be provided on
-// the client's http request.
-type MockupConfig struct {
-	query    string
-	populate bool
-}
-
 //go:embed mapping.json
 var mapping string
 
 func main() {
 	envPath := flag.String("env-file", defaultEnvFile, "environment file path")
-	query := flag.String("q", "foo", "String value used to search for a match")
 	populate := flag.Bool("p", false, "Populated Elasticsearch with mockup data")
 	flag.Parse()
 
@@ -42,20 +34,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cfg := MockupConfig{
-		query:    *query,
-		populate: *populate,
-	}
-
-	if err := run(cfg); err != nil {
+	if err := run(*populate); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(c MockupConfig) error {
-	repo, err := initClient(c)
+func run(populate bool) error {
+	repo, err := initClient()
 	if err != nil {
 		return err
+	}
+
+	if populate {
+		log.Println("Populating Elasticsearch with mockup data")
+		if err := populateWithMockup(repo); err != nil {
+			return err
+		}
 	}
 
 	addr := ":" + env["SERVER_PORT"]
@@ -63,7 +57,7 @@ func run(c MockupConfig) error {
 	return srv.Start()
 }
 
-func initClient(c MockupConfig) (*repository.Repository, error) {
+func initClient() (*repository.Repository, error) {
 	client, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{env["ELASTICSEARCH_URL"]},
 	})
@@ -74,6 +68,7 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 	cfg := repository.Config{
 		Client:    client,
 		IndexName: env["ELASTICSEARCH_INDEX"],
+		Mapping:   mapping,
 	}
 
 	repo, err := repository.New(cfg)
@@ -81,36 +76,7 @@ func initClient(c MockupConfig) (*repository.Repository, error) {
 		return nil, fmt.Errorf("error creating the repository: %s", err)
 	}
 
-	if err := repo.CreateIndexIfNotExists(mapping); err != nil {
-		return nil, err
-	}
-
-	if c.populate {
-		log.Println("Populating Elasticsearch with mockup data")
-		if err := populateWithMockup(repo); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := executeSearch(repo, c.query); err != nil {
-		return nil, err
-	}
-
 	return repo, nil
-}
-
-func executeSearch(repo *repository.Repository, query string) error {
-	res, err := repo.Search(query)
-	if err != nil {
-		return err
-	}
-
-	log.Println(res.Total)
-	for _, hit := range res.Hits {
-		log.Printf("%#v", hit)
-	}
-
-	return nil
 }
 
 func populateWithMockup(repo *repository.Repository) error {
@@ -120,5 +86,5 @@ func populateWithMockup(repo *repository.Repository) error {
 		{Title: "Baz", Abstract: "Lorem ispum baz but with foo also"},
 	}
 
-	return repo.CreateBulk(books)
+	return repo.InsertManyBooks(books)
 }
