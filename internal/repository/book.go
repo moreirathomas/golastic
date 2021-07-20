@@ -46,20 +46,18 @@ func unmarshalBooks(hits []interface{}) ([]internal.Book, error) {
 
 // search is a helper to encapsulate Elasticsearch interface call.
 func (r *Repository) search(query string) (golastic.SearchResults, error) {
-	var results golastic.SearchResults
-
 	res, err := r.es.Search(
 		r.es.Search.WithIndex(r.indexName),
 		r.es.Search.WithBody(buildSearchQuery(query)),
 		r.es.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return results, err
+		return golastic.SearchResults{}, err
 	}
 
 	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
-		return results, err
+		return golastic.SearchResults{}, err
 	}
 
 	return golastic.UnwrapSearchResponse(res, internal.Book{})
@@ -92,8 +90,6 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 		return internal.Book{}, err
 	}
 
-	var book internal.Book
-
 	book, ok := res.(internal.Book)
 	if !ok {
 		return book, fmt.Errorf("response has invalid book format: %#v", res)
@@ -103,16 +99,14 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 }
 
 func (r Repository) get(id string) (interface{}, error) {
-	var result interface{}
-
 	res, err := r.es.Get(r.indexName, id)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	defer res.Body.Close()
 	if err := golastic.ReadErrorResponse(res); err != nil {
-		return result, err
+		return nil, err
 	}
 
 	return golastic.UnwrapGetResponse(res, internal.Book{})

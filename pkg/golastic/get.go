@@ -22,8 +22,6 @@ type getResponseWrapper struct {
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
 func UnwrapGetResponse(res *esapi.Response, doc Document) (interface{}, error) {
-	var result interface{}
-
 	var rw getResponseWrapper
 	if err := json.NewDecoder(res.Body).Decode(&rw); err != nil {
 		return rw, err
