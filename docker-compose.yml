@@ -2,8 +2,8 @@ version: '3'
 
 services:
   web:
-    container_name: golastic_web
     build: .
+    container_name: golastic_web
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -13,6 +13,8 @@ services:
       - golastic
     ports:
       - 9999:9999
+    volumes:
+      - "./.logs/docker:/root/.logs/local"
 
   elasticsearch:
     container_name: golastic_elasticsearch
