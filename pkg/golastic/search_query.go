@@ -8,28 +8,33 @@ import (
 	"github.com/clarketm/json" // allows to omit empty structs
 )
 
-const (
-	defaultOperator  = "and"
-	defaultQuerySize = 10
-)
-
 // SearchQuery represents an Elasticsearch search query.
-// It can be built via NewQuery or NewDefaultQuery.
 // It exposes methods to easily retrieve its value
 // as bytes, string or via io.Reader.
 type SearchQuery struct {
+	// Query represents the body of the full text query being used.
+	// Only one of its fields must be used at a time.
 	Query struct {
-		MatchAll struct {
-			Boost int `json:"boost"`
-		} `json:"match_all,omitempty"`
-		MultiMatch struct {
-			Query    string  `json:"query,omitempty"`
-			Operator string  `json:"operator,omitempty"`
-			Fields   []Field `json:"fields,omitempty"`
-		} `json:"multi_match,omitempty"`
+		MatchAll   MatchAllQuery   `json:"match_all,omitempty"`
+		MultiMatch MultiMatchQuery `json:"multi_match,omitempty"`
 	} `json:"query,omitempty"`
+
 	Sort []map[string]string `json:"sort,omitempty"`
 	Size int                 `json:"size,omitempty"`
+}
+
+// MatchAllQuery is the query for performing queries
+// which matches all documents.
+type MatchAllQuery struct {
+	Boost int `json:"boost"`
+}
+
+// MultiMatchQuery is the query for performing full text queries
+// accross multiple fields.
+type MultiMatchQuery struct {
+	Query    string  `json:"query,omitempty"`
+	Fields   []Field `json:"fields,omitempty"`
+	Operator string  `json:"operator,omitempty"`
 }
 
 // Bytes returns the raw query as bytes.
@@ -71,26 +76,38 @@ type Field struct {
 //		 }
 //	 }
 //
-// results in:
+// gives:
 //
-// {"fields":["title^10","abstract"]}
+// 	> {"fields":["title^10","abstract"]}
 func (f Field) MarshalText() ([]byte, error) {
 	return []byte(f.String()), nil
 }
 
 // String returns a string representation of the field in the format
 // expected by Elasticsearch.
+// For example:
 //
-// Examples:
-//
-// - Field{Name: "title", Weight: 10}.String() == "title^10"
-//
-// - Field{Name: "abstract"}.String() == "abstract"
+// 	Field{Name: "title", Weight: 10}.String() == "title^10"
+// 	Field{Name: "abstract"}.String() == "abstract"
 func (f Field) String() string {
 	if f.Weight == 0 {
 		return f.Name
 	}
 	return fmt.Sprintf("%s^%d", f.Name, f.Weight)
+}
+
+const (
+	defaultOperator  = "and"
+	defaultQuerySize = 10
+)
+
+// SearchQueryConfig configures an Elasticsearch full text query.
+// Configuration keys are flattened to conveniently define a SearchQuery
+// without the need to reproduce its nested structure.
+type SearchQueryConfig struct {
+	Fields []Field
+	Sort   []map[string]string
+	Size   int
 }
 
 // MatchAllSearchQuery returns a Query targeting all documents
@@ -107,17 +124,6 @@ func MatchAllSearchQuery(size int) SearchQuery {
 	}
 
 	return q
-}
-
-// SearchQueryConfig is a flattened representation of injectable values
-// in an Elasticsearch query. The values are then injectected
-// in the right place via NewQuery.
-// It allows to define a Query conveniently, without having to
-// reproduce the whole structure.
-type SearchQueryConfig struct {
-	Fields []Field
-	Sort   []map[string]string
-	Size   int
 }
 
 // NewSearchQuery returns a Query, built upon the given search query
