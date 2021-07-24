@@ -36,12 +36,12 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := struct {
-		Data interface{}
+		Data interface{} `json:"data"`
 		httputil.Pagination
 	}{
 		Data: struct {
-			Results []internal.Book
-			Total   int
+			Results []internal.Book `json:"results"`
+			Total   int             `json:"total"`
 		}{Results: results, Total: total},
 		Pagination: httputil.NewPagination(size, from),
 	}
