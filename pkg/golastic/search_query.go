@@ -99,7 +99,8 @@ func (f Field) String() string {
 
 const (
 	defaultOperator  = "and"
-	defaultQuerySize = 10
+	DefaultQuerySize = 10
+	DefaultQueryFrom = 0
 )
 
 var (
@@ -150,11 +151,12 @@ func (q *SearchQuery) paginate(size int, from int) {
 	if size > 0 {
 		q.Size = size
 	} else {
-		q.Size = defaultQuerySize
+		q.Size = DefaultQuerySize
 	}
 
 	if from >= -1 {
 		q.From = from
+	} else {
+		q.From = DefaultQueryFrom
 	}
-	// Else use the null value 0
 }
