@@ -2,22 +2,28 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"github.com/moreirathomas/golastic/internal"
 )
 
-// readURLQuery returns the value for the given key in the request URL.
-// It returns a non nil error if the result is empty.
-func (s Server) readURLQuery(r *http.Request, key string) (string, error) {
-	q := r.URL.Query().Get(key)
-	if q == "" {
-		return "", errors.New("missing query: must use ?query=keywords in the url")
+// extractQueryParam returns the given param value in the request query.
+func extractQueryParam(r *http.Request, p string) string {
+	return r.URL.Query().Get(p)
+}
+
+// extractQueryParamAsInt returns the given param value in the request query.
+// It returns a non nil error if the result is not a number.
+func extractQueryParamAsInt(r *http.Request, p string) (int, error) {
+	qStr := extractQueryParam(r, p)
+	q, err := strconv.Atoi(qStr)
+	if err != nil {
+		return 0, fmt.Errorf("bad or missing query parameter: \"%s\" must be a number", p)
 	}
 	return q, nil
 }
@@ -27,18 +33,9 @@ func (s Server) readURLQuery(r *http.Request, key string) (string, error) {
 func extractRouteParam(r *http.Request, p string) (string, error) {
 	v, ok := mux.Vars(r)[p]
 	if !ok {
-		return "", fmt.Errorf("invalid route parameter for \"%s\"", p)
+		return "", fmt.Errorf("bad route parameter for \"%s\"", p)
 	}
 	return v, nil
-}
-
-func extractID(r *http.Request, key string) (string, error) {
-	id, err := extractRouteParam(r, key)
-	if err != nil {
-		return "", err
-	}
-
-	return id, nil
 }
 
 // decodeBody reads the given request body and writes the decoded data to dest.

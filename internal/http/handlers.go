@@ -9,25 +9,31 @@ import (
 // either in their title or in their abstract.
 func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	// Retrieve user's query string
-	q, err := s.readURLQuery(r, "query")
+	q := extractQueryParam(r, "query")
+
+	// Retrieve pagination parameters
+	size, err := extractQueryParamAsInt(r, "size")
 	if err != nil {
-		respondHTTPError(w, errBadRequest.Wrap(err))
-		return
+		size = 0 // default value will be used
+	}
+	from, err := extractQueryParamAsInt(r, "from")
+	if err != nil {
+		from = 0 // default value will be used
 	}
 
 	// Perform ElasticSearch query
-	results, err := s.Repository.SearchBooks(q)
+	results, total, err := s.Repository.SearchBooks(q, size, from)
 	if err != nil {
 		respondHTTPError(w, errInternal.Wrap(err))
 		return
 	}
 
-	respondJSON(w, 200, results)
+	respondJSON(w, 200, map[string]interface{}{"results": results, "total": total})
 }
 
 // GetBookByID retrieves a book by its ID in the repository.
 func (s Server) GetBookByID(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "bookID")
+	id, err := extractRouteParam(r, "bookID")
 	if err != nil {
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
@@ -62,7 +68,7 @@ func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 
 // UpdateBook adds a new book in the repository, if the request is valid.
 func (s Server) UpdateBook(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "bookID")
+	id, err := extractRouteParam(r, "bookID")
 	if err != nil {
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
@@ -85,7 +91,7 @@ func (s Server) UpdateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) DeleteBook(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "bookID")
+	id, err := extractRouteParam(r, "bookID")
 	if err != nil {
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return

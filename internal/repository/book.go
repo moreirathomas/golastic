@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
@@ -16,39 +15,26 @@ var _ internal.BookService = (*Repository)(nil)
 
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
-func (r Repository) SearchBooks(userQuery string) ([]internal.Book, error) {
-	res, err := r.search(userQuery)
+func (r Repository) SearchBooks(userQuery string, size int, from int) ([]internal.Book, int, error) {
+	esQuery := buildSearchQuery(userQuery, size, from)
+	res, err := r.makeSearch(esQuery)
 	if err != nil {
-		return []internal.Book{}, err
+		return []internal.Book{}, 0, err
 	}
 
-	log.Printf("Retrieved %d books\n", res.Total)
-
-	books, err := unmarshalBooks(res.Hits)
+	books, err := unmarshalHits(res.Hits)
 	if err != nil {
-		return books, fmt.Errorf("failed to unmarshal books: %w", err)
+		return books, 0, fmt.Errorf("failed to unmarshal books: %w", err)
 	}
 
-	return books, nil
+	return books, res.Total, nil
 }
 
-func unmarshalBooks(hits []interface{}) ([]internal.Book, error) {
-	books := make([]internal.Book, 0, len(hits))
-	for _, h := range hits {
-		b, ok := h.(internal.Book)
-		if !ok {
-			return books, fmt.Errorf("hit has invalid book format: %#v", h)
-		}
-		books = append(books, b)
-	}
-	return books, nil
-}
-
-// search is a helper to encapsulate Elasticsearch interface call.
-func (r *Repository) search(query string) (golastic.SearchResults, error) {
+// makeSearch is a helper to encapsulate golastic's method call.
+func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, error) {
 	res, err := r.es.Search(
 		r.es.Search.WithIndex(r.indexName),
-		r.es.Search.WithBody(buildSearchQuery(query)),
+		r.es.Search.WithBody(esQuery),
 		r.es.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
@@ -63,10 +49,10 @@ func (r *Repository) search(query string) (golastic.SearchResults, error) {
 	return golastic.UnwrapSearchResponse(res, internal.Book{})
 }
 
-// buildSearchQuery is a helper to encapsulate Elasticsearch interface call.
-func buildSearchQuery(s string) io.Reader {
+// buildSearchQuery is a helper to encapsulate golastic's method call.
+func buildSearchQuery(s string, size int, from int) io.Reader {
 	if s == "" {
-		return golastic.MatchAllSearchQuery(10, 0).Reader()
+		return golastic.MatchAllSearchQuery(size, from).Reader()
 	}
 
 	q := golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
@@ -78,15 +64,27 @@ func buildSearchQuery(s string) io.Reader {
 			{"_score": "asc"},
 			{"_doc": "asc"},
 		},
-		Size: 1,
-		From: 0,
+		Size: size,
+		From: from,
 	})
 
 	return q.Reader()
 }
 
+func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
+	books := make([]internal.Book, 0, len(hits))
+	for _, h := range hits {
+		b, ok := h.(internal.Book)
+		if !ok {
+			return books, fmt.Errorf("hit has invalid book format: %#v", h)
+		}
+		books = append(books, b)
+	}
+	return books, nil
+}
+
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := r.get(id)
+	res, err := r.makeGet(id)
 	if err != nil {
 		return internal.Book{}, err
 	}
@@ -99,7 +97,8 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 	return book, nil
 }
 
-func (r Repository) get(id string) (interface{}, error) {
+// makeGet is a helper to encapsulate golastic's method call.
+func (r Repository) makeGet(id string) (interface{}, error) {
 	res, err := r.es.Get(r.indexName, id)
 	if err != nil {
 		return nil, err
