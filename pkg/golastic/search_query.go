@@ -20,13 +20,14 @@ type SearchQuery struct {
 	} `json:"query,omitempty"`
 
 	Sort []map[string]string `json:"sort,omitempty"`
+	From int                 `json:"from,omitempty"`
 	Size int                 `json:"size,omitempty"`
 }
 
 // MatchAllQuery is the query for performing queries
 // which matches all documents.
 type MatchAllQuery struct {
-	Boost int `json:"boost"`
+	Boost int `json:"boost,omitempty"`
 }
 
 // MultiMatchQuery is the query for performing full text queries
@@ -101,28 +102,28 @@ const (
 	defaultQuerySize = 10
 )
 
+var (
+	defaultSort = []map[string]string{{"_doc": "asc"}}
+)
+
 // SearchQueryConfig configures an Elasticsearch full text query.
 // Configuration keys are flattened to conveniently define a SearchQuery
 // without the need to reproduce its nested structure.
 type SearchQueryConfig struct {
 	Fields []Field
 	Sort   []map[string]string
-	Size   int
+	From   int // From defines the number of hits to skip.
+	Size   int // Size defines the maximum number of hits to return.
 }
 
 // MatchAllSearchQuery returns a Query targeting all documents
 // for the current index, ordered by creation date.
-func MatchAllSearchQuery(size int) SearchQuery {
+func MatchAllSearchQuery(size int, from int) SearchQuery {
 	q := SearchQuery{}
-	q.Query.MatchAll.Boost = 1
-	q.Sort = []map[string]string{
-		{"_doc": "asc"},
-	}
-	q.Size = defaultQuerySize
-	if size > 0 {
-		q.Size = size
-	}
-
+	// Elasticsearch defaults the boost score to 1 if not provided.
+	// q.Query.MatchAll.Boost = 1
+	q.Sort = defaultSort
+	q.paginate(size, from)
 	return q
 }
 
@@ -130,18 +131,30 @@ func MatchAllSearchQuery(size int) SearchQuery {
 // and the QueryConfig.
 func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
 	q := SearchQuery{}
+
 	q.Query.MultiMatch.Query = qs
 	q.Query.MultiMatch.Fields = cfg.Fields
 	q.Query.MultiMatch.Operator = defaultOperator
-	q.Size = defaultQuerySize
 
 	if len(cfg.Sort) != 0 {
 		q.Sort = cfg.Sort
+	} else {
+		q.Sort = defaultSort
 	}
 
-	if cfg.Size > 0 {
-		q.Size = cfg.Size
-	}
-
+	q.paginate(cfg.Size, cfg.From)
 	return q
+}
+
+func (q *SearchQuery) paginate(size int, from int) {
+	if size > 0 {
+		q.Size = size
+	} else {
+		q.Size = defaultQuerySize
+	}
+
+	if from >= -1 {
+		q.From = from
+	}
+	// Else use the null value 0
 }

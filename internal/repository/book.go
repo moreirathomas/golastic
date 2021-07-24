@@ -66,7 +66,7 @@ func (r *Repository) search(query string) (golastic.SearchResults, error) {
 // buildSearchQuery is a helper to encapsulate Elasticsearch interface call.
 func buildSearchQuery(s string) io.Reader {
 	if s == "" {
-		return golastic.MatchAllSearchQuery(10).Reader()
+		return golastic.MatchAllSearchQuery(10, 0).Reader()
 	}
 
 	q := golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
@@ -78,7 +78,8 @@ func buildSearchQuery(s string) io.Reader {
 			{"_score": "asc"},
 			{"_doc": "asc"},
 		},
-		Size: 25,
+		Size: 1,
+		From: 0,
 	})
 
 	return q.Reader()
