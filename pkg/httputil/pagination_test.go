@@ -65,7 +65,8 @@ func TestSetLinks(t *testing.T) {
 	}
 
 	for _, v := range mock {
-		v.pagination.SetLinks(v.request)
+		// set total to 1000 to ensure we always have a next field
+		v.pagination.SetLinks(v.request, 1000)
 
 		if v.pagination.Link.Prev != v.expected.prev {
 			t.Fatalf("bad link for prev page: got %s, want %s", v.pagination.Link.Prev, v.expected.prev)

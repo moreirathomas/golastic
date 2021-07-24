@@ -23,13 +23,14 @@ func NewPagination(size int, from int) Pagination {
 	}
 }
 
-func (p *Pagination) SetLinks(r *http.Request) {
-	links := PaginationLinks{
-		Next: buildURLWithPagination(r, *p, p.PerPage),
-	}
+func (p *Pagination) SetLinks(r *http.Request, total int) {
+	links := PaginationLinks{}
 
 	if p.Page > 1 {
 		links.Prev = buildURLWithPagination(r, *p, -p.PerPage)
+	}
+	if total > p.Page*p.PerPage {
+		links.Next = buildURLWithPagination(r, *p, p.PerPage)
 	}
 
 	p.Link = links

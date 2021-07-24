@@ -45,7 +45,7 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 		}{Results: results, Total: total},
 		Pagination: httputil.NewPagination(size, from),
 	}
-	res.Pagination.SetLinks(r)
+	res.Pagination.SetLinks(r, total)
 
 	respondJSON(w, 200, res)
 }
