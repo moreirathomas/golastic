@@ -16,7 +16,7 @@ type PaginationLinks struct {
 	Next string `json:"next,omitempty"`
 }
 
-func NewPagination(size int, from int) Pagination {
+func NewPagination(size, from int) Pagination {
 	return Pagination{
 		Page:    computePage(from, size),
 		PerPage: size,
@@ -36,20 +36,20 @@ func (p *Pagination) SetLinks(r *http.Request, total int) {
 	p.Link = links
 }
 
-func computeOffset(page int, size int) int {
+func computeOffset(page, size int) int {
 	return (page - 1) * size
 }
 
-func computePage(from int, size int) int {
+func computePage(from, size int) int {
 	return (from / size) + 1
 }
 
 func buildURLWithQuery(r *http.Request, values map[string]int) string {
-	copy := r.URL.Query()
+	query := r.URL.Query()
 	for p, v := range values {
-		copy.Set(p, fmt.Sprint(v))
+		query.Set(p, fmt.Sprint(v))
 	}
-	r.URL.RawQuery = copy.Encode()
+	r.URL.RawQuery = query.Encode()
 	return r.URL.String()
 }
 

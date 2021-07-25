@@ -31,7 +31,7 @@ type MatchAllQuery struct {
 }
 
 // MultiMatchQuery is the query for performing full text queries
-// accross multiple fields.
+// across multiple fields.
 type MultiMatchQuery struct {
 	Query    string  `json:"query,omitempty"`
 	Fields   []Field `json:"fields,omitempty"`
@@ -103,9 +103,7 @@ const (
 	DefaultQueryFrom = 0
 )
 
-var (
-	defaultSort = []map[string]string{{"_doc": "asc"}}
-)
+var defaultSort = []map[string]string{{"_doc": "asc"}}
 
 // SearchQueryConfig configures an Elasticsearch full text query.
 // Configuration keys are flattened to conveniently define a SearchQuery
@@ -119,7 +117,7 @@ type SearchQueryConfig struct {
 
 // MatchAllSearchQuery returns a Query targeting all documents
 // for the current index, ordered by creation date.
-func MatchAllSearchQuery(size int, from int) SearchQuery {
+func MatchAllSearchQuery(size, from int) SearchQuery {
 	q := SearchQuery{}
 	// Elasticsearch defaults the boost score to 1 if not provided.
 	// q.Query.MatchAll.Boost = 1
@@ -147,7 +145,7 @@ func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
 	return q
 }
 
-func (q *SearchQuery) setPagination(size int, from int) {
+func (q *SearchQuery) setPagination(size, from int) {
 	if size > 0 {
 		q.Size = size
 	} else {

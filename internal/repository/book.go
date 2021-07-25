@@ -15,7 +15,7 @@ var _ internal.BookService = (*Repository)(nil)
 
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
-func (r Repository) SearchBooks(userQuery string, size int, from int) ([]internal.Book, int, error) {
+func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Book, int, error) {
 	esQuery := buildSearchQuery(userQuery, size, from)
 	res, err := r.makeSearch(esQuery)
 	if err != nil {
@@ -50,7 +50,7 @@ func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, erro
 }
 
 // buildSearchQuery builds an Elasticsearch search query.
-func buildSearchQuery(s string, size int, from int) io.Reader {
+func buildSearchQuery(s string, size, from int) io.Reader {
 	if s == "" {
 		return golastic.MatchAllSearchQuery(size, from).Reader()
 	}

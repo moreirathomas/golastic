@@ -28,7 +28,7 @@ type BookService interface {
 
 	// SearchBooks retrieves all books matching the input query.
 	// It also returns the number of retrieved books.
-	SearchBooks(query string, size int, from int) ([]Book, int, error)
+	SearchBooks(query string, size, from int) ([]Book, int, error)
 
 	// GetBookByID retrieves a book by its ID in the repository.
 	// It returns a non-nil error if one occurs in the process
