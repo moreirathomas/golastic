@@ -42,25 +42,25 @@ func TestSetLinks(t *testing.T) {
 		expected   expect
 	}{
 		{
-			request:    mockRequest("http://localhost:9999/books?query=foo&size=1&from=0"),
+			request:    mockRequest("http://localhost:9999/foo?size=1&from=0"),
 			pagination: httputil.NewPagination(1, 0),
 			expected: expect{
 				prev: "",
-				next: "http://localhost:9999/books?from=1&query=foo&size=1"},
+				next: "http://localhost:9999/foo?from=1&size=1"},
 		},
 		{
-			request:    mockRequest("http://localhost:9999/books?query=foo&size=1&from=1"),
+			request:    mockRequest("http://localhost:9999/foo?size=1&from=1"),
 			pagination: httputil.NewPagination(1, 1),
 			expected: expect{
-				prev: "http://localhost:9999/books?from=0&query=foo&size=1",
-				next: "http://localhost:9999/books?from=2&query=foo&size=1"},
+				prev: "http://localhost:9999/foo?from=0&size=1",
+				next: "http://localhost:9999/foo?from=2&size=1"},
 		},
 		{
-			request:    mockRequest("http://localhost:9999/books?query=foo&size=10&from=10"),
+			request:    mockRequest("http://localhost:9999/foo?size=10&from=10"),
 			pagination: httputil.NewPagination(10, 10),
 			expected: expect{
-				prev: "http://localhost:9999/books?from=0&query=foo&size=10",
-				next: "http://localhost:9999/books?from=20&query=foo&size=10"},
+				prev: "http://localhost:9999/foo?from=0&size=10",
+				next: "http://localhost:9999/foo?from=20&size=10"},
 		},
 	}
 

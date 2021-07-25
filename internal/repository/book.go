@@ -30,7 +30,7 @@ func (r Repository) SearchBooks(userQuery string, size int, from int) ([]interna
 	return books, res.Total, nil
 }
 
-// makeSearch is a helper to encapsulate golastic's method call.
+// makeSearch performs an Elasticsearch search request with the given query.
 func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, error) {
 	res, err := r.es.Search(
 		r.es.Search.WithIndex(r.indexName),
@@ -49,7 +49,7 @@ func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, erro
 	return golastic.UnwrapSearchResponse(res, internal.Book{})
 }
 
-// buildSearchQuery is a helper to encapsulate golastic's method call.
+// buildSearchQuery builds an Elasticsearch search query.
 func buildSearchQuery(s string, size int, from int) io.Reader {
 	if s == "" {
 		return golastic.MatchAllSearchQuery(size, from).Reader()
@@ -97,7 +97,7 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 	return book, nil
 }
 
-// makeGet is a helper to encapsulate golastic's method call.
+// makeGet performs an Elasticsearch get request with the given id.
 func (r Repository) makeGet(id string) (interface{}, error) {
 	res, err := r.es.Get(r.indexName, id)
 	if err != nil {

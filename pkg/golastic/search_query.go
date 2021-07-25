@@ -124,7 +124,7 @@ func MatchAllSearchQuery(size int, from int) SearchQuery {
 	// Elasticsearch defaults the boost score to 1 if not provided.
 	// q.Query.MatchAll.Boost = 1
 	q.Sort = defaultSort
-	q.paginate(size, from)
+	q.setPagination(size, from)
 	return q
 }
 
@@ -143,11 +143,11 @@ func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
 		q.Sort = defaultSort
 	}
 
-	q.paginate(cfg.Size, cfg.From)
+	q.setPagination(cfg.Size, cfg.From)
 	return q
 }
 
-func (q *SearchQuery) paginate(size int, from int) {
+func (q *SearchQuery) setPagination(size int, from int) {
 	if size > 0 {
 		q.Size = size
 	} else {

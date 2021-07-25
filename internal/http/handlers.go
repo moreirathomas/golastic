@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
 	"github.com/moreirathomas/golastic/pkg/httputil"
 )
@@ -16,13 +15,13 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	q := extractQueryParam(r, "query")
 
 	// Retrieve pagination parameters
-	size, err := extractQueryParamAsInt(r, "size")
+	size, err := extractQueryParamInt(r, "size")
 	if err != nil {
 		// FIXME move this default declaration to internal/repository
 		// Elasticsearch should be fine if we omit these params (do tests though)
 		size = golastic.DefaultQuerySize
 	}
-	from, err := extractQueryParamAsInt(r, "from")
+	from, err := extractQueryParamInt(r, "from")
 	if err != nil {
 		// FIXME
 		from = golastic.DefaultQueryFrom
@@ -36,13 +35,12 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := struct {
-		Data interface{} `json:"data"`
+		Results interface{} `json:"results"`
+		Total   int         `json:"total"`
 		httputil.Pagination
 	}{
-		Data: struct {
-			Results []internal.Book `json:"results"`
-			Total   int             `json:"total"`
-		}{Results: results, Total: total},
+		Results:    results,
+		Total:      total,
 		Pagination: httputil.NewPagination(size, from),
 	}
 	res.Pagination.SetLinks(r, total)

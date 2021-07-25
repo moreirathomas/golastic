@@ -17,9 +17,9 @@ func extractQueryParam(r *http.Request, p string) string {
 	return r.URL.Query().Get(p)
 }
 
-// extractQueryParamAsInt returns the given param value in the request query.
+// extractQueryParamInt returns the given param value in the request query.
 // It returns a non nil error if the result is not a number.
-func extractQueryParamAsInt(r *http.Request, p string) (int, error) {
+func extractQueryParamInt(r *http.Request, p string) (int, error) {
 	qStr := extractQueryParam(r, p)
 	q, err := strconv.Atoi(qStr)
 	if err != nil {
