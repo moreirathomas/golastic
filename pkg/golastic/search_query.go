@@ -119,8 +119,7 @@ type SearchQueryConfig struct {
 // for the current index, ordered by creation date.
 func MatchAllSearchQuery(size, from int) SearchQuery {
 	q := SearchQuery{}
-	// Elasticsearch defaults the boost score to 1 if not provided.
-	// q.Query.MatchAll.Boost = 1
+	q.Query.MatchAll.Boost = 1
 	q.Sort = defaultSort
 	q.setPagination(size, from)
 	return q
