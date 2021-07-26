@@ -17,8 +17,8 @@ func (rw *responseWriter) WriteHeader(statusCode int) {
 	rw.ResponseWriter.WriteHeader(statusCode)
 }
 
-// Middleware adds logging to the given http.Handler.
-func Middleware(h http.Handler) http.Handler {
+// RequestLogger adds logging to the given http.Handler.
+func RequestLogger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := &responseWriter{
 			ResponseWriter: w,

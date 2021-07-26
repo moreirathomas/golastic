@@ -38,7 +38,7 @@ func (s *Server) Start() error {
 
 func (s *Server) initRouter() {
 	s.router = mux.NewRouter().StrictSlash(true)
-	s.router.Use(logger.Middleware)
+	s.router.Use(logger.RequestLogger)
 	s.registerRoutes()
 }
 
