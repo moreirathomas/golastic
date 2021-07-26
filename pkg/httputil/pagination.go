@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	validation "github.com/go-ozzo/ozzo-validation"
 )
 
 type Pagination struct {
-	Page    int             `json:"page,omitempty"`
-	PerPage int             `json:"per_page,omitempty"`
-	Link    PaginationLinks `json:"links,omitempty"`
+	Page    int             `json:"page"`
+	PerPage int             `json:"per_page"`
+	Link    PaginationLinks `json:"links"`
 }
 
 type PaginationLinks struct {
@@ -17,32 +19,50 @@ type PaginationLinks struct {
 	Next string `json:"next,omitempty"`
 }
 
-func NewPagination(size, from int) Pagination {
-	return Pagination{
-		Page:    computePage(from, size),
-		PerPage: size,
-	}
-}
-
-func (p *Pagination) SetLinks(r *http.Request, total int) {
-	links := PaginationLinks{}
-
-	if p.Page > 1 {
-		links.Prev = buildURLWithPagination(r, *p, -p.PerPage)
-	}
-	if total > p.Page*p.PerPage {
-		links.Next = buildURLWithPagination(r, *p, p.PerPage)
-	}
-
-	p.Link = links
-}
-
-func computeOffset(page, size int) int {
+// PageToOffset returns the pagination offset value
+// corresponding to the given page and size.
+func PageToOffset(page, size int) int {
 	return (page - 1) * size
 }
 
-func computePage(from, size int) int {
-	return (from / size) + 1
+// OffsetToPage returns the pagination page value
+// corresponding to the given offset and size.
+func OffsetToPage(offset, size int) int {
+	return (offset / size) + 1
+}
+
+func NewPagination(r *http.Request, total, page, size int) (Pagination, error) {
+	p := Pagination{
+		Page:    page,
+		PerPage: size,
+	}
+	if err := p.Validate(); err != nil {
+		return Pagination{}, err
+	}
+	p.setLink(r, total)
+	return p, nil
+}
+
+func (p Pagination) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Page, validation.Required, validation.Min(1)),
+		validation.Field(&p.PerPage, validation.Required, validation.Min(1)),
+	)
+}
+
+// SetLinks sets the links of a Pagination object. The fields are conditionally
+// set based on the current page value and the total of items.
+func (p *Pagination) setLink(r *http.Request, total int) {
+	l := PaginationLinks{}
+
+	if p.Page > 1 {
+		l.Prev = buildURLWithPagination(r, *p, -1)
+	}
+	if total > p.Page*p.PerPage {
+		l.Next = buildURLWithPagination(r, *p, 1)
+	}
+
+	p.Link = l
 }
 
 func getBaseURL(r *http.Request) *url.URL {
@@ -66,7 +86,7 @@ func buildURLWithQuery(r *http.Request, values map[string]int) string {
 func buildURLWithPagination(r *http.Request, p Pagination, delta int) string {
 	v := map[string]int{
 		"size": p.PerPage,
-		"from": computeOffset(p.Page, p.PerPage) + delta,
+		"page": p.Page + delta,
 	}
 	return buildURLWithQuery(r, v)
 }

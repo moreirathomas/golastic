@@ -1,6 +1,7 @@
 package httputil_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,74 +9,67 @@ import (
 	"github.com/moreirathomas/golastic/pkg/httputil"
 )
 
-func TestNewPagination(t *testing.T) {
-	mock := []struct {
-		httputil.Pagination
-		expected int
-	}{
-		{httputil.NewPagination(10, 0), 1},
-		{httputil.NewPagination(10, 10), 2},
-		{httputil.NewPagination(10, 11), 2},
-		{httputil.NewPagination(10, 100), 11},
-	}
-
-	for _, v := range mock {
-		if v.Page != v.expected {
-			t.Fatalf("unexpected page value: got %d, want %d", v.Page, v.expected)
-		}
+func TestValidate(t *testing.T) {
+	// Zero values page and size must error
+	_, err := httputil.NewPagination(nil, 0, 0, 0)
+	if err == nil {
+		t.Error("Unexpected nil error: 0 value for parameters \"page\" and \"size\" must error")
 	}
 }
 
 func TestSetLinks(t *testing.T) {
-	mockRequest := func(target string) *http.Request {
-		return httptest.NewRequest("GET", target, nil)
+	// Request page 1, expect page 2 link
+	mock := TestLink{
+		Request: httptest.NewRequest("GET", buildMockURL(1, 10), nil),
+		Prev:    "",
+		Next:    buildMockURL(2, 10),
 	}
-
-	type expect struct {
-		prev string
-		next string
+	p, err := httputil.NewPagination(mock.Request, 1000, 1, 10)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
 	}
+	mock.makeTest(t, p)
 
-	mock := []struct {
-		request    *http.Request
-		pagination httputil.Pagination
-		expected   expect
-	}{
-		{
-			request:    mockRequest("http://localhost:9999/foo?size=1&from=0"),
-			pagination: httputil.NewPagination(1, 0),
-			expected: expect{
-				prev: "",
-				next: "http://localhost:9999/foo?from=1&size=1",
-			},
-		},
-		{
-			request:    mockRequest("http://localhost:9999/foo?size=1&from=1"),
-			pagination: httputil.NewPagination(1, 1),
-			expected: expect{
-				prev: "http://localhost:9999/foo?from=0&size=1",
-				next: "http://localhost:9999/foo?from=2&size=1",
-			},
-		},
-		{
-			request:    mockRequest("http://localhost:9999/foo?size=10&from=10"),
-			pagination: httputil.NewPagination(10, 10),
-			expected: expect{
-				prev: "http://localhost:9999/foo?from=0&size=10",
-				next: "http://localhost:9999/foo?from=20&size=10",
-			},
-		},
+	// Request page 2, expect page 1 and 3 links
+	mock = TestLink{
+		Request: httptest.NewRequest("GET", buildMockURL(2, 10), nil),
+		Prev:    buildMockURL(1, 10),
+		Next:    buildMockURL(3, 10),
 	}
+	p, err = httputil.NewPagination(mock.Request, 1000, 2, 10)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	mock.makeTest(t, p)
 
-	for _, v := range mock {
-		// set total to 1000 to ensure we always have a next field
-		v.pagination.SetLinks(v.request, 1000)
+	// Request page 2, provide a total lesser than the page size, expect page 1 link only
+	mock = TestLink{
+		Request: httptest.NewRequest("GET", buildMockURL(2, 10), nil),
+		Prev:    buildMockURL(1, 10),
+		Next:    "",
+	}
+	p, err = httputil.NewPagination(mock.Request, 19, 2, 10)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	mock.makeTest(t, p)
+}
 
-		if v.pagination.Link.Prev != v.expected.prev {
-			t.Fatalf("bad link for prev page: got %s, want %s", v.pagination.Link.Prev, v.expected.prev)
-		}
-		if v.pagination.Link.Next != v.expected.next {
-			t.Fatalf("bad link for next page: got %s, want %s", v.pagination.Link.Next, v.expected.next)
-		}
+type TestLink struct {
+	Request *http.Request
+	Prev    string
+	Next    string
+}
+
+func buildMockURL(page, size int) string {
+	return fmt.Sprintf("http://localhost:9999/foo?page=%d&size=%d", page, size)
+}
+
+func (l TestLink) makeTest(t *testing.T, p httputil.Pagination) {
+	if p.Link.Prev != l.Prev {
+		t.Fatalf("bad link for prev page: got %s, want %s", p.Link.Prev, l.Prev)
+	}
+	if p.Link.Next != l.Next {
+		t.Fatalf("bad link for next page: got %s, want %s", p.Link.Next, l.Next)
 	}
 }

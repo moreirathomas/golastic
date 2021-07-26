@@ -8,6 +8,14 @@ import (
 	"github.com/clarketm/json" // allows to omit empty structs
 )
 
+const (
+	defaultOperator  = "and"
+	DefaultQuerySize = 10
+	DefaultQueryFrom = 0
+)
+
+var defaultSort = []map[string]string{{"_doc": "asc"}}
+
 // SearchQuery represents an Elasticsearch search query.
 // It exposes methods to easily retrieve its value
 // as bytes, string or via io.Reader.
@@ -96,14 +104,6 @@ func (f Field) String() string {
 	}
 	return fmt.Sprintf("%s^%d", f.Name, f.Weight)
 }
-
-const (
-	defaultOperator  = "and"
-	DefaultQuerySize = 10
-	DefaultQueryFrom = 0
-)
-
-var defaultSort = []map[string]string{{"_doc": "asc"}}
 
 // SearchQueryConfig configures an Elasticsearch full text query.
 // Configuration keys are flattened to conveniently define a SearchQuery

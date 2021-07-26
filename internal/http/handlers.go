@@ -17,20 +17,25 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	// Retrieve pagination parameters
 	size, err := extractQueryParamInt(r, "size")
 	if err != nil {
-		// FIXME move this default declaration to internal/repository
-		// Elasticsearch should be fine if we omit these params (do tests though)
 		size = golastic.DefaultQuerySize
 	}
-	from, err := extractQueryParamInt(r, "from")
-	if err != nil {
-		// FIXME
-		from = golastic.DefaultQueryFrom
+	page, err := extractQueryParamInt(r, "page")
+	if err != nil || page < 1 {
+		page = 1
 	}
+	from := httputil.PageToOffset(page, size)
 
 	// Perform ElasticSearch query
 	results, total, err := s.Repository.SearchBooks(q, size, from)
 	if err != nil {
 		respondHTTPError(w, errInternal.Wrap(err))
+		return
+	}
+
+	// Paginate the results and send the response
+	pagination, err := httputil.NewPagination(r, total, page, size)
+	if err != nil {
+		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
 
@@ -41,9 +46,8 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	}{
 		Results:    results,
 		Total:      total,
-		Pagination: httputil.NewPagination(size, from),
+		Pagination: pagination,
 	}
-	res.Pagination.SetLinks(r, total)
 
 	respondJSON(w, 200, res)
 }
