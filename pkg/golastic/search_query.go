@@ -70,16 +70,16 @@ type Field struct {
 //
 // For instance, marshaling the following:
 //
-//	 map[string]interface{}{
-//		 "fields": []Field{
-//			 {Name: "title", Weight: 10},
-//			 {Name: "abstract"}
-//		 }
-//	 }
+//	map[string]interface{}{
+//		"fields": []Field{
+//			{Name: "title", Weight: 10},
+//			{Name: "abstract"}
+//		}
+//	}
 //
 // gives:
 //
-// 	> {"fields":["title^10","abstract"]}
+//	{"fields":["title^10","abstract"]}
 func (f Field) MarshalText() ([]byte, error) {
 	return []byte(f.String()), nil
 }
@@ -88,8 +88,8 @@ func (f Field) MarshalText() ([]byte, error) {
 // expected by Elasticsearch.
 // For example:
 //
-// 	Field{Name: "title", Weight: 10}.String() == "title^10"
-// 	Field{Name: "abstract"}.String() == "abstract"
+//	Field{Name: "title", Weight: 10}.String() == "title^10"
+//	Field{Name: "abstract"}.String() == "abstract"
 func (f Field) String() string {
 	if f.Weight == 0 {
 		return f.Name
