@@ -4,23 +4,33 @@
 docker:
 	@docker-compose --env-file ./.env.docker up --build
 
-.PHONY: docker-down
-docker-down:
-	@docker-compose --env-file ./.env.docker down
+.PHONY: down
+down:
+	@docker-compose down
 
-# Local develpment
+# Local development
 
 .PHONY: local
-local:
-	@docker-compose --env-file ./.env.local up --build elasticsearch kibana
+local: # Runs Elasticsearch containers in the background then runs the server
+	@echo "Starting Elasticsearch containers..." && \
+	docker-compose --env-file ./.env.local up --detach elasticsearch kibana && \
+	echo "Elasticsearch containers ready." && \
+	echo "Starting local server..." && \
+	make local-server
 
-.PHONY: local-down
-local-down:
-	@docker-compose --env-file ./.env.local down
+.PHONY: local-env
+local-env:
+	@docker-compose --env-file ./.env.local up elasticsearch kibana
 
 .PHONY: local-server
 local-server:
 	@go run ./cmd/main.go --env-file ./.env.local
+
+# Clean-up temporary data
+
+.PHONY: clear
+clear:
+	@rm -rf .logs/* .volumes/*
 
 # Lint commends
 
@@ -30,13 +40,18 @@ lint:
 
 # Test commands
 
+TEST_FUNC=^.*$$
+ifdef t
+TEST_FUNC=$(t)
+endif
+TEST_PKG=./...
+ifdef p
+TEST_PKG=./$(p)
+endif
+
 .PHONY: test
 test:
-	@go test -v -timeout 30s -run ${t} ./...
-
-.PHONY: tests
-tests:
-	@go test -v -timeout 30s ./...
+	go test -v -timeout 30s -run $(TEST_FUNC) $(TEST_PKG)
 
 # Serve docs
 
