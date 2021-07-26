@@ -5,16 +5,22 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"path/filepath"
 
 	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7/estransport"
 
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/internal/http"
 	"github.com/moreirathomas/golastic/internal/repository"
 	"github.com/moreirathomas/golastic/pkg/dotenv"
+	"github.com/moreirathomas/golastic/pkg/logger"
 )
 
-const defaultEnvFile = "./.env.local"
+const (
+	defaultEnvFile = "./.env.local"
+	logPath        = "./.logs/local"
+)
 
 var env = map[string]string{
 	"ELASTICSEARCH_INDEX": "",
@@ -54,12 +60,18 @@ func run(populate bool) error {
 
 	addr := ":" + env["SERVER_PORT"]
 	srv := http.NewServer(addr, *repo)
+	srv.ErrorLog = logger.DefaultFile(filepath.Join(logPath, "server.errorlog"))
 	return srv.Start()
 }
 
 func initClient() (*repository.Repository, error) {
 	client, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{env["ELASTICSEARCH_URL"]},
+		Logger: &estransport.TextLogger{
+			Output: logger.DefaultFile(filepath.Join(logPath, "elasticsearch.log")).Writer(),
+			// EnableRequestBody:  true,
+			// EnableResponseBody: true,
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating Elasticsearch client: %s", err)
