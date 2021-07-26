@@ -3,6 +3,7 @@ package httputil
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 type Pagination struct {
@@ -44,13 +45,22 @@ func computePage(from, size int) int {
 	return (from / size) + 1
 }
 
+func getBaseURL(r *http.Request) *url.URL {
+	return &url.URL{
+		Scheme: "http",
+		Host:   r.Host,
+		Path:   r.URL.Path,
+	}
+}
+
 func buildURLWithQuery(r *http.Request, values map[string]int) string {
+	newURL := getBaseURL(r)
 	query := r.URL.Query()
 	for p, v := range values {
 		query.Set(p, fmt.Sprint(v))
 	}
-	r.URL.RawQuery = query.Encode()
-	return r.URL.String()
+	newURL.RawQuery = query.Encode()
+	return newURL.String()
 }
 
 func buildURLWithPagination(r *http.Request, p Pagination, delta int) string {
