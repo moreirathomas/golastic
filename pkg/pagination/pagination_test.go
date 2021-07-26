@@ -1,4 +1,4 @@
-package httputil_test
+package pagination_test
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/moreirathomas/golastic/pkg/httputil"
+	"github.com/moreirathomas/golastic/pkg/pagination"
 )
 
 func TestValidate(t *testing.T) {
 	// Zero values page and size must error
-	_, err := httputil.NewPagination(nil, 0, 0, 0)
+	_, err := pagination.New(nil, 0, 0, 0)
 	if err == nil {
 		t.Error("Unexpected nil error: 0 value for parameters \"page\" and \"size\" must error")
 	}
@@ -24,7 +24,7 @@ func TestSetLinks(t *testing.T) {
 		Prev:    "",
 		Next:    buildMockURL(2, 10),
 	}
-	p, err := httputil.NewPagination(mock.Request, 1000, 1, 10)
+	p, err := pagination.New(mock.Request, 1000, 1, 10)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -36,7 +36,7 @@ func TestSetLinks(t *testing.T) {
 		Prev:    buildMockURL(1, 10),
 		Next:    buildMockURL(3, 10),
 	}
-	p, err = httputil.NewPagination(mock.Request, 1000, 2, 10)
+	p, err = pagination.New(mock.Request, 1000, 2, 10)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -48,7 +48,7 @@ func TestSetLinks(t *testing.T) {
 		Prev:    buildMockURL(1, 10),
 		Next:    "",
 	}
-	p, err = httputil.NewPagination(mock.Request, 19, 2, 10)
+	p, err = pagination.New(mock.Request, 19, 2, 10)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -65,11 +65,11 @@ func buildMockURL(page, size int) string {
 	return fmt.Sprintf("http://localhost:9999/foo?page=%d&size=%d", page, size)
 }
 
-func (l TestLink) makeTest(t *testing.T, p httputil.Pagination) {
-	if p.Link.Prev != l.Prev {
-		t.Fatalf("bad link for prev page: got %s, want %s", p.Link.Prev, l.Prev)
+func (l TestLink) makeTest(t *testing.T, p pagination.Pagination) {
+	if p.Links.Prev != l.Prev {
+		t.Fatalf("bad link for prev page: got %s, want %s", p.Links.Prev, l.Prev)
 	}
-	if p.Link.Next != l.Next {
-		t.Fatalf("bad link for next page: got %s, want %s", p.Link.Next, l.Next)
+	if p.Links.Next != l.Next {
+		t.Fatalf("bad link for next page: got %s, want %s", p.Links.Next, l.Next)
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/moreirathomas/golastic/pkg/golastic"
-	"github.com/moreirathomas/golastic/pkg/httputil"
+	"github.com/moreirathomas/golastic/pkg/pagination"
 )
 
 // SearchBooks retrieves all books matching the query string,
@@ -23,7 +23,7 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	if err != nil || page < 1 {
 		page = 1
 	}
-	from := httputil.PageToOffset(page, size)
+	from := pagination.PageToOffset(page, size)
 
 	// Perform ElasticSearch query
 	results, total, err := s.Repository.SearchBooks(q, size, from)
@@ -33,7 +33,7 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Paginate the results and send the response
-	pagination, err := httputil.NewPagination(r, total, page, size)
+	p, err := pagination.New(r, total, page, size)
 	if err != nil {
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
@@ -42,11 +42,11 @@ func (s Server) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	res := struct {
 		Results interface{} `json:"results"`
 		Total   int         `json:"total"`
-		httputil.Pagination
+		pagination.Pagination
 	}{
 		Results:    results,
 		Total:      total,
-		Pagination: pagination,
+		Pagination: p,
 	}
 
 	respondJSON(w, 200, res)

@@ -1,4 +1,4 @@
-package httputil
+package pagination
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 )
 
 type Pagination struct {
-	Page    int             `json:"page"`
-	PerPage int             `json:"per_page"`
-	Link    PaginationLinks `json:"links"`
+	Page    int   `json:"page"`
+	PerPage int   `json:"per_page"`
+	Links   Links `json:"links"`
 }
 
-type PaginationLinks struct {
+type Links struct {
 	Prev string `json:"prev,omitempty"`
 	Next string `json:"next,omitempty"`
 }
@@ -31,7 +31,7 @@ func OffsetToPage(offset, size int) int {
 	return (offset / size) + 1
 }
 
-func NewPagination(r *http.Request, total, page, size int) (Pagination, error) {
+func New(r *http.Request, total, page, size int) (Pagination, error) {
 	p := Pagination{
 		Page:    page,
 		PerPage: size,
@@ -53,7 +53,7 @@ func (p Pagination) Validate() error {
 // SetLinks sets the links of a Pagination object. The fields are conditionally
 // set based on the current page value and the total of items.
 func (p *Pagination) setLink(r *http.Request, total int) {
-	l := PaginationLinks{}
+	l := Links{}
 
 	if p.Page > 1 {
 		l.Prev = buildURLWithPagination(r, *p, -1)
@@ -62,7 +62,7 @@ func (p *Pagination) setLink(r *http.Request, total int) {
 		l.Next = buildURLWithPagination(r, *p, 1)
 	}
 
-	p.Link = l
+	p.Links = l
 }
 
 func getBaseURL(r *http.Request) *url.URL {
