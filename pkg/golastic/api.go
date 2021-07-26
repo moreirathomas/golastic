@@ -2,7 +2,6 @@ package golastic
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -25,8 +24,8 @@ type Document interface {
 // ReadErrorResponse reads the response body and returns an error if
 // the response status indicates failure.
 func ReadErrorResponse(res *esapi.Response) error {
-	if res.IsError() {
-		return fmt.Errorf("elasticsearch error: %s", res)
+	if !res.IsError() {
+		return nil
 	}
-	return nil
+	return statusError(res.StatusCode)
 }
