@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
@@ -16,60 +15,37 @@ var _ internal.BookService = (*Repository)(nil)
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
 func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Book, int, error) {
-	esQuery := buildSearchQuery(userQuery, size, from)
-	res, err := r.makeSearch(esQuery)
-	if err != nil {
+	handleError := func(err error) ([]internal.Book, int, error) {
 		return []internal.Book{}, 0, err
 	}
 
-	books, err := unmarshalHits(res.Hits)
+	esQuery := buildSearchQuery(userQuery, size, from)
+
+	res, err := esQuery.Do(r.es, r.indexName)
 	if err != nil {
-		return books, 0, fmt.Errorf("failed to unmarshal books: %w", err)
+		return handleError(err)
 	}
 
-	return books, res.Total, nil
-}
-
-// makeSearch performs an Elasticsearch search request with the given query.
-func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, error) {
-	raw, err := r.es.Search(
-		r.es.Search.WithIndex(r.indexName),
-		r.es.Search.WithBody(esQuery),
-		r.es.Search.WithTrackTotalHits(true),
-	)
+	results, err := golastic.ReadSearchResponse(res, internal.Book{})
 	if err != nil {
-		return golastic.SearchResults{}, fmt.Errorf(
-			"%w: failed to perform search: %s",
-			ErrRequest, err,
-		)
-	}
-	defer raw.Body.Close()
-
-	if err := golastic.ReadErrorResponse(raw); err != nil {
-		return golastic.SearchResults{}, fmt.Errorf(
-			"%w: got error response: %s",
-			ErrRequest, err,
-		)
+		return handleError(err)
 	}
 
-	res, err := golastic.UnwrapSearchResponse(raw, internal.Book{})
+	books, err := unmarshalHits(results.Hits)
 	if err != nil {
-		return golastic.SearchResults{}, fmt.Errorf(
-			"%w: failed to read result as Book: %s",
-			ErrMarshaling, err,
-		)
+		return handleError(fmt.Errorf("failed to unmarshal books: %w", err))
 	}
 
-	return res, nil
+	return books, results.Total, nil
 }
 
 // buildSearchQuery builds an Elasticsearch search query.
-func buildSearchQuery(s string, size, from int) io.Reader {
+func buildSearchQuery(s string, size, from int) golastic.SearchQuery {
 	if s == "" {
-		return golastic.MatchAllSearchQuery(size, from).Reader()
+		return golastic.MatchAllSearchQuery(size, from)
 	}
 
-	q := golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
+	return golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
 		Fields: []golastic.Field{
 			{Name: "title", Weight: 10},
 			{Name: "abstract"},
@@ -81,8 +57,6 @@ func buildSearchQuery(s string, size, from int) io.Reader {
 		Size: size,
 		From: from,
 	})
-
-	return q.Reader()
 }
 
 func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
@@ -98,43 +72,23 @@ func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := r.makeGet(id)
+	res, err := golastic.Get(r.es, r.indexName, id)
 	if err != nil {
 		return internal.Book{}, err
 	}
 
-	book, ok := res.(internal.Book)
+	result, err := golastic.ReadGetResponse(res, internal.Book{})
+	if err != nil {
+		return internal.Book{}, err
+	}
+	defer res.Body.Close()
+
+	book, ok := result.(internal.Book)
 	if !ok {
 		return book, fmt.Errorf("response has invalid book format: %#v", res)
 	}
 
 	return book, nil
-}
-
-// makeGet performs an Elasticsearch get request with the given id.
-func (r Repository) makeGet(id string) (interface{}, error) {
-	raw, err := r.es.Get(r.indexName, id)
-	if err != nil {
-		return nil, err
-	}
-	defer raw.Body.Close()
-
-	if err := golastic.ReadErrorResponse(raw); err != nil {
-		return nil, fmt.Errorf(
-			"%w: got error response: %s",
-			ErrRequest, err,
-		)
-	}
-
-	res, err := golastic.UnwrapGetResponse(raw, internal.Book{})
-	if err != nil {
-		return nil, fmt.Errorf(
-			"%w: failed to read result as Book: %s",
-			ErrMarshaling, err,
-		)
-	}
-
-	return res, nil
 }
 
 // InsertBook indexes a new book.

@@ -2,19 +2,21 @@ package golastic
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
-// SearchResults is a simplified result of an Elasticsearch output.
+// SearchResults is a simplified and flattened result
+// of an Elasticsearch response for a search query.
 type SearchResults struct {
 	Total int           `json:"total"`
 	Hits  []interface{} `json:"hits"`
 }
 
-// searchResponseWrapper represents selected fields from
-// the response to an Elasticsearch Search request.
-type searchResponseWrapper struct {
+// esSearchResponse represents the structure of an Elasticsearch response
+// for a search query.
+type esSearchResponse struct {
 	Took int
 	Hits struct {
 		Total struct {
@@ -28,31 +30,51 @@ type searchResponseWrapper struct {
 	}
 }
 
-// UnwrapSearchResponse reads an Elasticsearch response for a Search request
+// ReadSearchResponse reads an Elasticsearch response for a Search request
 // and returns a SearchResults or the first non-nil error occurring
 // in the process.
 //
 // It must be provided a Document to determinate the marshaling process.
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
-func UnwrapSearchResponse(res *esapi.Response, doc Document) (SearchResults, error) {
-	var results SearchResults
-
-	var rw searchResponseWrapper
-	if err := json.NewDecoder(res.Body).Decode(&rw); err != nil {
-		return results, err
+func ReadSearchResponse(res *esapi.Response, doc Document) (SearchResults, error) {
+	if res.IsError() {
+		return SearchResults{}, statusError(res.StatusCode)
 	}
 
-	results.Total = rw.Hits.Total.Value
-	if len(rw.Hits.Hits) < 1 {
+	r, err := decodeRawSearchResponse(res)
+	if err != nil {
+		return SearchResults{}, fmt.Errorf("%w: %s", ErrUnhandled, err)
+	}
+
+	return unmarshalSearchResponse(r, doc)
+}
+
+func decodeRawSearchResponse(res *esapi.Response) (esSearchResponse, error) {
+	var r esSearchResponse
+	defer res.Body.Close()
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return r, err
+	}
+	return r, nil
+}
+
+func unmarshalSearchResponse(r esSearchResponse, doc Document) (SearchResults, error) {
+	var results SearchResults
+
+	results.Total = r.Hits.Total.Value
+
+	// handle empty results
+	if len(r.Hits.Hits) < 1 {
 		results.Hits = []interface{}{}
 		return results, nil
 	}
 
-	for _, hit := range rw.Hits.Hits {
+	// unmarshal elasticsearch hits
+	for _, hit := range r.Hits.Hits {
 		h, err := doc.NewHit(hit.ID, hit.Source)
 		if err != nil {
-			return SearchResults{}, err
+			return results, err
 		}
 		results.Hits = append(results.Hits, h)
 	}

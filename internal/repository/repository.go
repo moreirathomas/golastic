@@ -25,14 +25,14 @@ type Repository struct {
 }
 
 // New returns a new instance of repository.
-func New(c Config) (*Repository, error) {
-	if c.IndexName == "" {
+func New(cfg Config) (*Repository, error) {
+	if cfg.IndexName == "" {
 		return &Repository{}, errors.New("cannot use empty string \"\" as index name")
 	}
 
-	repo := Repository{es: c.Client, indexName: c.IndexName}
+	repo := Repository{es: cfg.Client, indexName: cfg.IndexName}
 
-	if err := repo.setupIndex(c.Mapping); err != nil {
+	if err := repo.setupIndex(cfg.Mapping); err != nil {
 		return nil, err
 	}
 

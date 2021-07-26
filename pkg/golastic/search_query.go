@@ -6,6 +6,8 @@ import (
 	"io"
 
 	"github.com/clarketm/json" // allows to omit empty structs
+	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 const (
@@ -60,6 +62,39 @@ func (q SearchQuery) String() string {
 // Reader returns the raw query as an io.Reader.
 func (q SearchQuery) Reader() io.Reader {
 	return bytes.NewReader(q.Bytes())
+}
+
+// Do sends an Elasticsearch request according to the configured query
+// and returns an Elasticsearch response or the first non-nil error
+// that occurred in the process.
+func (q SearchQuery) Do(es *elasticsearch.Client, indexName string) (*esapi.Response, error) {
+	raw, err := es.Search(
+		es.Search.WithIndex(indexName),
+		es.Search.WithBody(q.Reader()),
+		es.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%w: failed to perform search: %s",
+			ErrBadRequest, err,
+		)
+	}
+
+	return raw, nil
+}
+
+func (q *SearchQuery) setPagination(size, from int) {
+	if size > 0 {
+		q.Size = size
+	} else {
+		q.Size = DefaultQuerySize
+	}
+
+	if from >= -1 {
+		q.From = from
+	} else {
+		q.From = DefaultQueryFrom
+	}
 }
 
 // Field is a field name associated with an optional weight.
@@ -142,18 +177,4 @@ func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
 
 	q.setPagination(cfg.Size, cfg.From)
 	return q
-}
-
-func (q *SearchQuery) setPagination(size, from int) {
-	if size > 0 {
-		q.Size = size
-	} else {
-		q.Size = DefaultQuerySize
-	}
-
-	if from >= -1 {
-		q.From = from
-	} else {
-		q.From = DefaultQueryFrom
-	}
 }
