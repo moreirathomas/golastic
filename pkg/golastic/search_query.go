@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/clarketm/json" // allows to omit empty structs
-	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
@@ -67,11 +66,11 @@ func (q SearchQuery) Reader() io.Reader {
 // Do sends an Elasticsearch request according to the configured query
 // and returns an Elasticsearch response or the first non-nil error
 // that occurred in the process.
-func (q SearchQuery) Do(es *elasticsearch.Client, indexName string) (*esapi.Response, error) {
-	raw, err := es.Search(
-		es.Search.WithIndex(indexName),
-		es.Search.WithBody(q.Reader()),
-		es.Search.WithTrackTotalHits(true),
+func (q SearchQuery) Do(ctx ContextConfig) (*esapi.Response, error) {
+	raw, err := ctx.Client.Search(
+		ctx.Client.Search.WithIndex(ctx.IndexName),
+		ctx.Client.Search.WithBody(q.Reader()),
+		ctx.Client.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
