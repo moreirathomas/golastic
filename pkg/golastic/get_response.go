@@ -14,6 +14,22 @@ type esGetResponse struct {
 	Hit
 }
 
+// unwrap returns the document wrapped in esGetResponse
+// or the first non-nil error encountered in the process.
+// It uses Unmarshaler interface to determinate the marshaling process.
+func (r esGetResponse) unwrap(doc Unmarshaler) (interface{}, error) {
+	if !r.Found {
+		return nil, errors.New("not found")
+	}
+
+	result, err := doc.UnmarshalHit(r.Hit)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // ReadGetResponse reads an Elasticsearch response for a GET request
 // and returns the result as a generic interface or the first non-nil
 // error occurring in the process.
@@ -31,7 +47,7 @@ func ReadGetResponse(res *esapi.Response, doc Unmarshaler) (interface{}, error) 
 		return SearchResults{}, ErrUnhandled
 	}
 
-	return unmarshalGetResponse(r, doc)
+	return r.unwrap(doc)
 }
 
 func decodeRawGetResponse(res *esapi.Response) (esGetResponse, error) {
@@ -40,17 +56,4 @@ func decodeRawGetResponse(res *esapi.Response) (esGetResponse, error) {
 		return r, err
 	}
 	return r, nil
-}
-
-func unmarshalGetResponse(r esGetResponse, doc Unmarshaler) (interface{}, error) {
-	if !r.Found {
-		return nil, errors.New("not found")
-	}
-
-	result, err := doc.UnmarshalHit(r.Hit)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }
