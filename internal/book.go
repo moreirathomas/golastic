@@ -36,7 +36,8 @@ type BookService interface {
 	GetBookByID(id string) (Book, error)
 
 	// InsertBook adds the given book in the repository.
-	InsertBook(book Book) error
+	// It returns the ID of the newly inserted book.
+	InsertBook(book Book) (string, error)
 
 	// UpdateBook updates a book in the repository.
 	UpdateBook(book Book) error
