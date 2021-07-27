@@ -113,19 +113,23 @@ func (r Repository) makeGet(id string) (interface{}, error) {
 }
 
 // InsertBook indexes a new book.
-func (r Repository) InsertBook(b internal.Book) error {
+func (r Repository) InsertBook(b internal.Book) (string, error) {
 	payload, err := json.Marshal(b)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	res, err := r.es.Index(r.indexName, bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer res.Body.Close()
-	return golastic.ReadErrorResponse(res)
+	if err := golastic.ReadErrorResponse(res); err != nil {
+		return "", err
+	}
+
+	return golastic.UnwrapIndexResponse(res)
 }
 
 // InsertManyBooks indexes multiple new book documents at once.

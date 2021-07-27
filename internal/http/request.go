@@ -54,7 +54,7 @@ func readBookPayload(body io.ReadCloser) (internal.Book, error) {
 		return internal.Book{}, err
 	}
 
-	if err := book.Validate(); err != nil {
+	if err := book.Validate(true); err != nil {
 		return internal.Book{}, err
 	}
 
