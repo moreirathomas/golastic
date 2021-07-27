@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 // Book represents a book in the API.
@@ -47,22 +47,22 @@ type BookService interface {
 
 // Validate return a non-nil error if the book receiver does not match
 // the validation requirements.
-func (b Book) Validate() error {
+func (b Book) Validate(partial bool) error {
 	return validation.ValidateStruct(&b,
-		validation.Field(&b.Title, validation.Required, validation.Length(1, 100)),
-		validation.Field(&b.Abstract, validation.Required),
+		validation.Field(&b.Title, validation.Required.When(!partial), validation.Length(1, 100)),
+		validation.Field(&b.Abstract, validation.Required.When(!partial)),
 		validation.Field(&b.Author, validation.By(func(_ interface{}) error {
-			return b.Author.Validate()
+			return b.Author.Validate(partial)
 		})),
 	)
 }
 
 // Validate return a non-nil error if the author receiver does not match
 // the validation requirements.
-func (a Author) Validate() error {
+func (a Author) Validate(partial bool) error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.Firstname, validation.Required, is.ASCII, validation.Length(1, 50)),
-		validation.Field(&a.Lastname, validation.Required, is.ASCII, validation.Length(1, 50)),
+		validation.Field(&a.Firstname, validation.Required.When(!partial), is.ASCII, validation.Length(1, 50)),
+		validation.Field(&a.Lastname, validation.Required.When(!partial), is.ASCII, validation.Length(1, 50)),
 	)
 }
 
