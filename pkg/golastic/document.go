@@ -7,16 +7,18 @@ import (
 	"log"
 
 	"github.com/clarketm/json"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 )
 
 type DocumentAPI struct {
-	ContextConfig
+	client *elasticsearch.Client
+	index  string
 }
 
 func (api DocumentAPI) Get(id string) (*esapi.Response, error) {
-	res, err := api.Client.Get(api.IndexName, id)
+	res, err := api.client.Get(api.index, id)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
@@ -31,7 +33,7 @@ func (api DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, erro
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
-	res, err := api.Client.Update(api.IndexName, id, bytes.NewReader(payload))
+	res, err := api.client.Update(api.index, id, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
@@ -45,7 +47,7 @@ func (api DocumentAPI) Index(doc interface{}) (*esapi.Response, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
-	res, err := api.Client.Index(api.IndexName, bytes.NewReader(payload))
+	res, err := api.client.Index(api.index, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
@@ -54,7 +56,7 @@ func (api DocumentAPI) Index(doc interface{}) (*esapi.Response, error) {
 }
 
 func (api DocumentAPI) Delete(id string) (*esapi.Response, error) {
-	res, err := api.Client.Delete(api.IndexName, id)
+	res, err := api.client.Delete(api.index, id)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
@@ -64,8 +66,8 @@ func (api DocumentAPI) Delete(id string) (*esapi.Response, error) {
 
 func (api DocumentAPI) Bulk(docs []interface{}) error {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Index:  api.IndexName,
-		Client: api.Client,
+		Index:  api.index,
+		Client: api.client,
 	})
 	if err != nil {
 		return err

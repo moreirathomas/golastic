@@ -10,21 +10,23 @@ type ContextConfig struct {
 
 // Indices interfaces Elasticsearch Indices API.
 func Indices(c *elasticsearch.Client) IndicesAPI {
-	return IndicesAPI{client: c}
+	return IndicesAPI{
+		client: c,
+	}
 }
 
 // Document interfaces Elasticsearch Document API.
 func Document(cfg ContextConfig) DocumentAPI {
-	return DocumentAPI{ContextConfig{
-		Client:    cfg.Client,
-		IndexName: cfg.IndexName,
-	}}
+	return DocumentAPI{
+		client: cfg.Client,
+		index:  cfg.IndexName,
+	}
 }
 
 // Search interfaces Elasticsearch Search API.
 func Search(cfg ContextConfig) SearchAPI {
-	return SearchAPI{ContextConfig{
-		Client:    cfg.Client,
-		IndexName: cfg.IndexName,
-	}}
+	return SearchAPI{
+		client: cfg.Client,
+		index:  cfg.IndexName,
+	}
 }

@@ -129,9 +129,9 @@ type SearchQueryConfig struct {
 	Size   int // Size defines the maximum number of hits to return.
 }
 
-// MatchAllSearchQuery returns a Query targeting all documents
+// matchAllSearchQuery returns a Query targeting all documents
 // for the current index, ordered by creation date.
-func MatchAllSearchQuery(size, from int) SearchQuery {
+func matchAllSearchQuery(size, from int) SearchQuery {
 	q := SearchQuery{}
 	q.Query.MatchAll.Boost = 1
 	q.Sort = defaultSort
@@ -139,9 +139,9 @@ func MatchAllSearchQuery(size, from int) SearchQuery {
 	return q
 }
 
-// NewSearchQuery returns a Query, built upon the given search query
+// newSearchQuery returns a Query, built upon the given search query
 // and the QueryConfig.
-func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
+func newSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
 	q := SearchQuery{}
 
 	q.Query.MultiMatch.Query = qs
