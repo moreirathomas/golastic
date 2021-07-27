@@ -24,7 +24,7 @@ type Repository struct {
 	indexName string
 }
 
-func (r Repository) Context() golastic.ContextConfig {
+func (r Repository) context() golastic.ContextConfig {
 	return golastic.ContextConfig{
 		IndexName: r.indexName,
 		Client:    r.es,
@@ -50,7 +50,7 @@ func New(cfg Config) (*Repository, error) {
 }
 
 func (r *Repository) setupIndex(mapping string) error {
-	isCreate, err := golastic.CreateIndexIfNotExists(r.Context(), mapping)
+	isCreate, err := golastic.CreateIndexIfNotExists(r.context(), mapping)
 	if isCreate {
 		log.Println("Creating Elasticsearch index with mapping")
 	}
