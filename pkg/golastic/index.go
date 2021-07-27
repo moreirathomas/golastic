@@ -6,8 +6,8 @@ import (
 )
 
 // IndexExists returns true when the index already exists in the repository.
-func IndexExists(c ContextConfig) (bool, error) {
-	res, err := c.Client.Indices.Exists([]string{c.IndexName})
+func IndexExists(ctx ContextConfig) (bool, error) {
+	res, err := ctx.Client.Indices.Exists([]string{ctx.IndexName})
 	if err != nil {
 		return false, err
 	}
@@ -22,10 +22,10 @@ func IndexExists(c ContextConfig) (bool, error) {
 }
 
 // CreateIndex creates a new index with mapping.
-func CreateIndex(c ContextConfig, mapping string) error {
-	res, err := c.Client.Indices.Create(
-		c.IndexName,
-		c.Client.Indices.Create.WithBody(strings.NewReader(mapping)),
+func CreateIndex(ctx ContextConfig, mapping string) error {
+	res, err := ctx.Client.Indices.Create(
+		ctx.IndexName,
+		ctx.Client.Indices.Create.WithBody(strings.NewReader(mapping)),
 	)
 	if err != nil {
 		return err
@@ -42,14 +42,14 @@ func CreateIndex(c ContextConfig, mapping string) error {
 // CreateIndexIfNotExists creates a new index with mapping
 // if the index does not exists yet on the client.
 // It returns true if the index is being created.
-func CreateIndexIfNotExists(c ContextConfig, mapping string) (bool, error) {
-	exists, err := IndexExists(c)
+func CreateIndexIfNotExists(ctx ContextConfig, mapping string) (bool, error) {
+	exists, err := IndexExists(ctx)
 	switch {
 	case err != nil:
 		return false, err
 	case exists:
 		return false, nil
 	default:
-		return true, CreateIndex(c, mapping)
+		return true, CreateIndex(ctx, mapping)
 	}
 }
