@@ -13,12 +13,19 @@ type ContextConfig struct {
 	IndexName string
 }
 
-// Document provides a NewHit method that is used to unmarshal a json
-// from the body of an Elasticsearch API response.
-type Document interface {
-	// NewHit returns the document as an unmarshalled struct
+// Hit represents a single result as returned by an Elasticsearch response.
+type Hit struct {
+	ID     string          `json:"_id"`
+	Score  float32         `json:"_score"`
+	Source json.RawMessage `json:"_source"`
+}
+
+// Unmarshaler expects an UnmarshalHit method that is used to unmarshal a Hit
+// retrieved from the body of an Elasticsearch API response.
+type Unmarshaler interface {
+	// UnmarshalHit returns the document as an unmarshalled struct
 	// or a non-nil error.
-	NewHit(id string, src json.RawMessage) (interface{}, error)
+	UnmarshalHit(Hit) (interface{}, error)
 }
 
 // ReadErrorResponse reads the response body and returns an error if

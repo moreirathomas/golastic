@@ -10,8 +10,8 @@ import (
 // SearchResults is a simplified and flattened result
 // of an Elasticsearch response for a search query.
 type SearchResults struct {
-	Total int           `json:"total"`
-	Hits  []interface{} `json:"hits"`
+	Total   int
+	Results []interface{}
 }
 
 // esSearchResponse represents the structure of an Elasticsearch response
@@ -22,11 +22,7 @@ type esSearchResponse struct {
 		Total struct {
 			Value int
 		}
-		Hits []struct {
-			ID     string          `json:"_id"`
-			Source json.RawMessage `json:"_source"`
-			Sort   []interface{}   `json:"sort"`
-		}
+		Hits []Hit
 	}
 }
 
@@ -37,7 +33,7 @@ type esSearchResponse struct {
 // It must be provided a Document to determinate the marshaling process.
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
-func ReadSearchResponse(res *esapi.Response, doc Document) (SearchResults, error) {
+func ReadSearchResponse(res *esapi.Response, doc Unmarshaler) (SearchResults, error) {
 	if res.IsError() {
 		return SearchResults{}, statusError(res.StatusCode)
 	}
@@ -59,24 +55,24 @@ func decodeRawSearchResponse(res *esapi.Response) (esSearchResponse, error) {
 	return r, nil
 }
 
-func unmarshalSearchResponse(r esSearchResponse, doc Document) (SearchResults, error) {
+func unmarshalSearchResponse(r esSearchResponse, doc Unmarshaler) (SearchResults, error) {
 	var results SearchResults
 
 	results.Total = r.Hits.Total.Value
 
 	// handle empty results
 	if len(r.Hits.Hits) < 1 {
-		results.Hits = []interface{}{}
+		results.Results = []interface{}{}
 		return results, nil
 	}
 
 	// unmarshal elasticsearch hits
 	for _, hit := range r.Hits.Hits {
-		h, err := doc.NewHit(hit.ID, hit.Source)
+		h, err := doc.UnmarshalHit(hit)
 		if err != nil {
 			return results, err
 		}
-		results.Hits = append(results.Hits, h)
+		results.Results = append(results.Results, h)
 	}
 
 	return results, nil

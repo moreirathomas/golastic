@@ -29,7 +29,7 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 		return handleError(err)
 	}
 
-	books, err := unmarshalHits(results.Hits)
+	books, err := unmarshalHits(results.Results)
 	if err != nil {
 		return handleError(fmt.Errorf("failed to unmarshal books: %w", err))
 	}
