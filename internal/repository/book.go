@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/moreirathomas/golastic/internal"
@@ -81,7 +79,6 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 	if err != nil {
 		return internal.Book{}, err
 	}
-	defer res.Body.Close()
 
 	book, ok := result.(internal.Book)
 	if !ok {
@@ -93,22 +90,13 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 
 // InsertBook indexes a new book.
 func (r Repository) InsertBook(b internal.Book) error {
-	payload, err := json.Marshal(b)
-	if err != nil {
-		return fmt.Errorf(
-			"%w: failed to parse book as json: %s",
-			ErrMarshaling, err,
-		)
-	}
-
-	res, err := r.esContext.Client.Index(r.esContext.IndexName, bytes.NewReader(payload))
+	res, err := golastic.Insert(r.esContext, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w failed to insert book %#v: %s",
 			ErrInternal, b, err,
 		)
 	}
-	defer res.Body.Close()
 
 	return golastic.ReadErrorResponse(res)
 }
@@ -132,25 +120,13 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	// The document must be wrapped in a "doc" object
-	payload, err := json.Marshal(map[string]internal.Book{
-		"doc": b,
-	})
-	if err != nil {
-		return fmt.Errorf(
-			"%w: failed to marshal json %#v: %s",
-			ErrMarshaling, b, err,
-		)
-	}
-
-	res, err := r.esContext.Client.Update(r.esContext.IndexName, b.ID, bytes.NewReader(payload))
+	res, err := golastic.Update(r.esContext, b.ID, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: failed to update book %#v: %s",
 			ErrInternal, b, err,
 		)
 	}
-	defer res.Body.Close()
 
 	// TODO: handle 404 when golastic allows it
 	return golastic.ReadErrorResponse(res)
@@ -158,12 +134,10 @@ func (r Repository) UpdateBook(b internal.Book) error {
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := r.esContext.Client.Delete(r.esContext.IndexName, id)
+	res, err := golastic.Delete(r.esContext, id)
 	if err != nil {
 		return err
 	}
-
-	defer res.Body.Close()
 
 	// TODO: handle 404 when golastic allows it
 	return golastic.ReadErrorResponse(res)
