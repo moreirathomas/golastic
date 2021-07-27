@@ -60,8 +60,8 @@ func (r esSearchResponse) unwrap(doc Unmarshaler) (SearchResults, error) {
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
 func ReadSearchResponse(res *esapi.Response, doc Unmarshaler) (SearchResults, error) {
-	if res.IsError() {
-		return SearchResults{}, statusError(res.StatusCode)
+	if err := ReadErrorResponse(res); err != nil {
+		return SearchResults{}, err
 	}
 
 	r, err := decodeRawSearchResponse(res)

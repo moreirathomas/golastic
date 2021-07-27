@@ -11,13 +11,13 @@ func IndexExists(ctx ContextConfig) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch res.StatusCode {
-	case 200:
+	switch err := ReadErrorResponse(res); err {
+	case nil:
 		return true, nil
-	case 404:
+	case ErrNotFound:
 		return false, nil
 	default:
-		return false, fmt.Errorf("[%s]", res.Status())
+		return false, fmt.Errorf("[%s] %w", res.Status(), err)
 	}
 }
 
@@ -31,12 +31,7 @@ func CreateIndex(ctx ContextConfig, mapping string) error {
 		return err
 	}
 
-	defer res.Body.Close()
-	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
-	}
-
-	return nil
+	return ReadErrorResponse(res)
 }
 
 // CreateIndexIfNotExists creates a new index with mapping
