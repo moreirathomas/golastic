@@ -22,22 +22,16 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 	var err error
 
 	if userQuery == "" {
-		res, err = golastic.Search(r.context()).MatchAllQuery(size, from)
+		res, err = golastic.Search(r.context()).MatchAllQuery(golastic.SearchPagination{Size: size, From: from})
 	} else {
 		res, err = golastic.Search(r.context()).MultiMatchQuery(userQuery,
-			// TODO extract or something
-			golastic.SearchQueryConfig{
-				Fields: []golastic.Field{
-					{Name: "title", Weight: 10},
-					{Name: "abstract"},
-				},
-				Sort: []map[string]string{
-					{"_score": "asc"},
-					{"_doc": "asc"},
-				},
-				Size: size,
-				From: from,
-			})
+			[]golastic.Field{
+				{Name: "title", Weight: 10},
+				{Name: "abstract"},
+			},
+			golastic.SearchPagination{Size: size, From: from},
+			golastic.SearchSort{"_score:asc", "_doc:asc"},
+		)
 	}
 	if err != nil {
 		return handleError(err)

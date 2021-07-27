@@ -12,40 +12,38 @@ type SearchAPI struct {
 	index  string
 }
 
-func (api SearchAPI) MatchAllQuery(size, from int) (*esapi.Response, error) {
-	// TODO
-	q := matchAllSearchQuery(size, from)
-
-	raw, err := api.client.Search(
+func (api SearchAPI) MatchAllQuery(p SearchPagination) (*esapi.Response, error) {
+	res, err := api.client.Search(
 		api.client.Search.WithIndex(api.index),
-		api.client.Search.WithBody(q.Reader()),
+		api.client.Search.WithBody(newMatchAllQuery().Reader()),
+		api.client.Search.WithSort(defaultSort...),
+		api.client.Search.WithFrom(p.From),
+		api.client.Search.WithSize(p.Size),
 		api.client.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"%w: failed to perform search: %s",
-			ErrBadRequest, err,
-		)
+		return nil, fmt.Errorf("%w: failed to perform search: %s", ErrBadRequest, err)
 	}
 
-	return raw, nil
+	return res, nil
 }
 
-func (api SearchAPI) MultiMatchQuery(qs string, cfg SearchQueryConfig) (*esapi.Response, error) {
-	// TODO
-	q := newSearchQuery(qs, cfg)
+func (api SearchAPI) MultiMatchQuery(qs string, f []Field, p SearchPagination, s SearchSort) (*esapi.Response, error) {
+	if len(s) == 0 {
+		s = defaultSort
+	}
 
-	raw, err := api.client.Search(
+	res, err := api.client.Search(
 		api.client.Search.WithIndex(api.index),
-		api.client.Search.WithBody(q.Reader()),
+		api.client.Search.WithBody(newMultiMatchQuery(qs, f).Reader()),
+		api.client.Search.WithSort(s...),
+		api.client.Search.WithFrom(p.From),
+		api.client.Search.WithSize(p.Size),
 		api.client.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"%w: failed to perform search: %s",
-			ErrBadRequest, err,
-		)
+		return nil, fmt.Errorf("%w: failed to perform search: %s", ErrBadRequest, err)
 	}
 
-	return raw, nil
+	return res, nil
 }
