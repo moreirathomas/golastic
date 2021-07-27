@@ -50,7 +50,7 @@ func New(cfg Config) (*Repository, error) {
 }
 
 func (r *Repository) setupIndex(mapping string) error {
-	isCreate, err := golastic.CreateIndexIfNotExists(r.Context(), mapping)
+	isCreate, err := golastic.Indices(r.es).CreateIfNotExists(r.indexName, mapping)
 	if isCreate {
 		log.Println("Creating Elasticsearch index with mapping")
 	}

@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
 )
@@ -17,9 +18,27 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 		return []internal.Book{}, 0, err
 	}
 
-	esQuery := buildSearchQuery(userQuery, size, from)
+	var res *esapi.Response
+	var err error
 
-	res, err := esQuery.Do(r.Context())
+	if userQuery == "" {
+		res, err = golastic.Search(r.Context()).MatchAllQuery(size, from)
+	} else {
+		res, err = golastic.Search(r.Context()).MultiMatchQuery(userQuery,
+			// TODO extract or something
+			golastic.SearchQueryConfig{
+				Fields: []golastic.Field{
+					{Name: "title", Weight: 10},
+					{Name: "abstract"},
+				},
+				Sort: []map[string]string{
+					{"_score": "asc"},
+					{"_doc": "asc"},
+				},
+				Size: size,
+				From: from,
+			})
+	}
 	if err != nil {
 		return handleError(err)
 	}
@@ -37,26 +56,6 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 	return books, results.Total, nil
 }
 
-// buildSearchQuery builds an Elasticsearch search query.
-func buildSearchQuery(s string, size, from int) golastic.SearchQuery {
-	if s == "" {
-		return golastic.MatchAllSearchQuery(size, from)
-	}
-
-	return golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
-		Fields: []golastic.Field{
-			{Name: "title", Weight: 10},
-			{Name: "abstract"},
-		},
-		Sort: []map[string]string{
-			{"_score": "asc"},
-			{"_doc": "asc"},
-		},
-		Size: size,
-		From: from,
-	})
-}
-
 func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 	books := make([]internal.Book, 0, len(hits))
 	for _, h := range hits {
@@ -70,7 +69,7 @@ func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := golastic.Get(r.Context(), id)
+	res, err := golastic.Document(r.Context()).Get(id)
 	if err != nil {
 		return internal.Book{}, err
 	}
@@ -90,7 +89,7 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 
 // InsertBook indexes a new book.
 func (r Repository) InsertBook(b internal.Book) error {
-	res, err := golastic.Insert(r.Context(), b)
+	res, err := golastic.Document(r.Context()).Index(b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w failed to insert book %#v: %s",
@@ -108,7 +107,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 		in[i] = b
 	}
 
-	if err := golastic.BulkIndex(r.Context(), in); err != nil {
+	if err := golastic.Document(r.Context()).Bulk(in); err != nil {
 		return fmt.Errorf(
 			"%w: failed to insert books: %s",
 			ErrInternal, err,
@@ -120,7 +119,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	res, err := golastic.Update(r.Context(), b.ID, b)
+	res, err := golastic.Document(r.Context()).Update(b.ID, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: failed to update book %#v: %s",
@@ -134,7 +133,7 @@ func (r Repository) UpdateBook(b internal.Book) error {
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := golastic.Delete(r.Context(), id)
+	res, err := golastic.Document(r.Context()).Delete(id)
 	if err != nil {
 		return err
 	}
