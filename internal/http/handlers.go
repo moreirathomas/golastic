@@ -78,11 +78,15 @@ func (s Server) InsertBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	book.CreatedAt = time.Now()
-	if err := s.Repository.InsertBook(book); err != nil {
+	id, err := s.Repository.InsertBook(book)
+	if err != nil {
 		// TODO: specify error handling (could be a duplicate or internal error)
 		respondHTTPError(w, errBadRequest.Wrap(err))
 		return
 	}
+
+	// Populate the book instance with the ID created on Elasticsearch part.
+	book.ID = id
 
 	respondJSON(w, 201, book)
 }

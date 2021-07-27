@@ -23,9 +23,6 @@ type Unmarshaler interface {
 
 // ReadErrorResponse reads the response body and returns an error if
 // the response status indicates failure.
-// Deprecated: in the future this will be internally implemented
-// in all ReadXxxResponse functions (such as ReadSearchResponse).
-// Use for response kinds that do not have an associated ReadResponse function.
 func ReadErrorResponse(res *esapi.Response) error {
 	if !res.IsError() {
 		return nil

@@ -38,8 +38,8 @@ func (r esGetResponse) unwrap(doc Unmarshaler) (interface{}, error) {
 // The typical usage is to provide an entity having a custom NewHit method
 // (see Document interface).
 func ReadGetResponse(res *esapi.Response, doc Unmarshaler) (interface{}, error) {
-	if res.IsError() {
-		return nil, statusError(res.StatusCode)
+	if err := ReadErrorResponse(res); err != nil {
+		return SearchResults{}, err
 	}
 
 	r, err := decodeRawGetResponse(res)

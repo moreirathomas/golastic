@@ -17,13 +17,13 @@ func (api IndicesAPI) Exists(index string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch res.StatusCode {
-	case 200:
+	switch err := ReadErrorResponse(res); err {
+	case nil:
 		return true, nil
-	case 404:
+	case ErrNotFound:
 		return false, nil
 	default:
-		return false, fmt.Errorf("[%s]", res.Status())
+		return false, fmt.Errorf("[%s] %w", res.Status(), err)
 	}
 }
 
@@ -37,12 +37,7 @@ func (api IndicesAPI) Create(index, mapping string) error {
 		return err
 	}
 
-	defer res.Body.Close()
-	if res.IsError() {
-		return fmt.Errorf("error: %s", res)
-	}
-
-	return nil
+	return ReadErrorResponse(res)
 }
 
 // CreateIfNotExists creates a new index with mapping if the index does not

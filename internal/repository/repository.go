@@ -24,7 +24,7 @@ type Repository struct {
 	indexName string
 }
 
-func (r Repository) Context() golastic.ContextConfig {
+func (r Repository) context() golastic.ContextConfig {
 	return golastic.ContextConfig{
 		IndexName: r.indexName,
 		Client:    r.es,

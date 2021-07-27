@@ -22,9 +22,9 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 	var err error
 
 	if userQuery == "" {
-		res, err = golastic.Search(r.Context()).MatchAllQuery(size, from)
+		res, err = golastic.Search(r.context()).MatchAllQuery(size, from)
 	} else {
-		res, err = golastic.Search(r.Context()).MultiMatchQuery(userQuery,
+		res, err = golastic.Search(r.context()).MultiMatchQuery(userQuery,
 			// TODO extract or something
 			golastic.SearchQueryConfig{
 				Fields: []golastic.Field{
@@ -69,7 +69,7 @@ func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := golastic.Document(r.Context()).Get(id)
+	res, err := golastic.Document(r.context()).Get(id)
 	if err != nil {
 		return internal.Book{}, err
 	}
@@ -88,16 +88,21 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 }
 
 // InsertBook indexes a new book.
-func (r Repository) InsertBook(b internal.Book) error {
-	res, err := golastic.Document(r.Context()).Index(b)
+func (r Repository) InsertBook(b internal.Book) (string, error) {
+	res, err := golastic.Document(r.context()).Index(b)
 	if err != nil {
-		return fmt.Errorf(
+		return "", fmt.Errorf(
 			"%w failed to insert book %#v: %s",
 			ErrInternal, b, err,
 		)
 	}
 
-	return golastic.ReadErrorResponse(res)
+	id, err := golastic.ReadInsertResponse(res)
+	if err != nil {
+		return "", fmt.Errorf("could not insert book: %w", err)
+	}
+
+	return id, nil
 }
 
 // InsertManyBooks indexes multiple new book documents at once.
@@ -107,7 +112,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 		in[i] = b
 	}
 
-	if err := golastic.Document(r.Context()).Bulk(in); err != nil {
+	if err := golastic.Document(r.context()).Bulk(in); err != nil {
 		return fmt.Errorf(
 			"%w: failed to insert books: %s",
 			ErrInternal, err,
@@ -119,7 +124,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	res, err := golastic.Document(r.Context()).Update(b.ID, b)
+	res, err := golastic.Document(r.context()).Update(b.ID, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: failed to update book %#v: %s",
@@ -133,7 +138,7 @@ func (r Repository) UpdateBook(b internal.Book) error {
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := golastic.Document(r.Context()).Delete(id)
+	res, err := golastic.Document(r.context()).Delete(id)
 	if err != nil {
 		return err
 	}
