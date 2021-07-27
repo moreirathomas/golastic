@@ -20,7 +20,15 @@ type Config struct {
 
 // Repository allows to index and search documents.
 type Repository struct {
-	esContext golastic.ContextConfig
+	es        *elasticsearch.Client
+	indexName string
+}
+
+func (r Repository) Context() golastic.ContextConfig {
+	return golastic.ContextConfig{
+		IndexName: r.indexName,
+		Client:    r.es,
+	}
 }
 
 // New returns a new instance of repository.
@@ -30,10 +38,8 @@ func New(cfg Config) (*Repository, error) {
 	}
 
 	repo := Repository{
-		esContext: golastic.ContextConfig{
-			Client:    cfg.Client,
-			IndexName: cfg.IndexName,
-		},
+		es:        cfg.Client,
+		indexName: cfg.IndexName,
 	}
 
 	if err := repo.setupIndex(cfg.Mapping); err != nil {
@@ -44,7 +50,7 @@ func New(cfg Config) (*Repository, error) {
 }
 
 func (r *Repository) setupIndex(mapping string) error {
-	isCreate, err := golastic.CreateIndexIfNotExists(r.esContext, mapping)
+	isCreate, err := golastic.CreateIndexIfNotExists(r.Context(), mapping)
 	if isCreate {
 		log.Println("Creating Elasticsearch index with mapping")
 	}
@@ -57,7 +63,7 @@ func (r *Repository) setupIndex(mapping string) error {
 
 // Info returns basic information about the Elasticsearch client.
 func (r *Repository) Info() (*esapi.Response, error) {
-	res, err := r.esContext.Client.Info()
+	res, err := r.es.Info()
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
