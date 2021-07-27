@@ -89,16 +89,20 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 }
 
 // InsertBook indexes a new book.
-func (r Repository) InsertBook(b internal.Book) error {
+func (r Repository) InsertBook(b internal.Book) (string, error) {
 	res, err := golastic.Insert(r.esContext, b)
 	if err != nil {
-		return fmt.Errorf(
+		return "", fmt.Errorf(
 			"%w failed to insert book %#v: %s",
 			ErrInternal, b, err,
 		)
 	}
 
-	return golastic.ReadErrorResponse(res)
+	if err := golastic.ReadErrorResponse(res); err != nil {
+		return "", err
+	}
+
+	return golastic.UnwrapIndexResponse(res)
 }
 
 // InsertManyBooks indexes multiple new book documents at once.

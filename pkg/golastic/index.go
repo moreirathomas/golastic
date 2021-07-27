@@ -1,8 +1,12 @@
 package golastic
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 // IndexExists returns true when the index already exists in the repository.
@@ -47,4 +51,27 @@ func CreateIndexIfNotExists(ctx ContextConfig, mapping string) (bool, error) {
 	default:
 		return true, CreateIndex(ctx, mapping)
 	}
+}
+
+// getResponseWrapper represents selected fields from
+// the response to an Elasticsearch Document Indexing request.
+type indexResponseWrapper struct {
+	Result string `json:"result"`
+	ID     string `json:"_id"`
+}
+
+// UnwrapIndexResponse reads an Elasticsearch response for a Document Indexing
+// request and returns a string corresponding to the ID of the indexed document
+// or the first non-nil error occurring in the process.
+func UnwrapIndexResponse(res *esapi.Response) (string, error) {
+	var rw indexResponseWrapper
+	if err := json.NewDecoder(res.Body).Decode(&rw); err != nil {
+		return "", err
+	}
+
+	if rw.Result != "created" {
+		return "", errors.New("not created")
+	}
+
+	return rw.ID, nil
 }
