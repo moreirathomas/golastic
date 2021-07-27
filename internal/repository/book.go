@@ -98,11 +98,12 @@ func (r Repository) InsertBook(b internal.Book) (string, error) {
 		)
 	}
 
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return "", err
+	id, err := golastic.ReadInsertResponse(res)
+	if err != nil {
+		return "", fmt.Errorf("could not insert book: %w", err)
 	}
 
-	return golastic.UnwrapIndexResponse(res)
+	return id, nil
 }
 
 // InsertManyBooks indexes multiple new book documents at once.
