@@ -19,7 +19,7 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 
 	esQuery := buildSearchQuery(userQuery, size, from)
 
-	res, err := esQuery.Do(r.esContext)
+	res, err := esQuery.Do(r.Context())
 	if err != nil {
 		return handleError(err)
 	}
@@ -70,7 +70,7 @@ func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := golastic.Get(r.esContext, id)
+	res, err := golastic.Get(r.Context(), id)
 	if err != nil {
 		return internal.Book{}, err
 	}
@@ -90,7 +90,7 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 
 // InsertBook indexes a new book.
 func (r Repository) InsertBook(b internal.Book) error {
-	res, err := golastic.Insert(r.esContext, b)
+	res, err := golastic.Insert(r.Context(), b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w failed to insert book %#v: %s",
@@ -108,7 +108,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 		in[i] = b
 	}
 
-	if err := golastic.BulkIndex(r.esContext, in); err != nil {
+	if err := golastic.BulkIndex(r.Context(), in); err != nil {
 		return fmt.Errorf(
 			"%w: failed to insert books: %s",
 			ErrInternal, err,
@@ -120,7 +120,7 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	res, err := golastic.Update(r.esContext, b.ID, b)
+	res, err := golastic.Update(r.Context(), b.ID, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: failed to update book %#v: %s",
@@ -134,7 +134,7 @@ func (r Repository) UpdateBook(b internal.Book) error {
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := golastic.Delete(r.esContext, id)
+	res, err := golastic.Delete(r.Context(), id)
 	if err != nil {
 		return err
 	}
