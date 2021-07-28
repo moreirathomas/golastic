@@ -1,3 +1,6 @@
+// This file regroups all entities and methods to interact with
+// Elasticseach Indices API.
+
 package golastic
 
 import (
@@ -7,6 +10,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v7"
 )
 
+// SearchAPI is used to interact with indices in Elasticsearch.
 type IndicesAPI struct {
 	client *elasticsearch.Client
 }

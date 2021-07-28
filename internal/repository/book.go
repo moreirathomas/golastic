@@ -13,7 +13,7 @@ var _ internal.BookService = (*Repository)(nil)
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
 func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Book, int, error) {
-	var res *golastic.SearchResults
+	var res *golastic.SearchResult
 	var err error
 
 	if userQuery == "" {

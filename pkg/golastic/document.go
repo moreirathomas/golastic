@@ -1,3 +1,9 @@
+// This file regroups all entities and methods to interact with
+// Elasticseach single document APIs, namely Index, Get, Delete
+// and Update APIs.
+// It also contains one entity to interact with the  multi document
+// Bulk API.
+
 package golastic
 
 import (
@@ -13,6 +19,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 )
 
+// DocumentAPI is used to interact with documents in Elasticsearch.
 type DocumentAPI struct {
 	client *elasticsearch.Client
 	index  string
@@ -20,6 +27,7 @@ type DocumentAPI struct {
 
 // -- Get API
 
+// Get returns the result of a getting a document in Elasticsearch.
 func (api *DocumentAPI) Get(id string) (*GetResult, error) {
 	res, err := api.client.Get(api.index, id)
 	if err != nil {
@@ -39,11 +47,15 @@ func (api *DocumentAPI) Get(id string) (*GetResult, error) {
 	return &r, nil
 }
 
+// IndexResult is the result of getting a document in Elasticsearch.
 type GetResult struct {
 	Found bool `json:"found"`
 	Hit
 }
 
+// Unwrap conveniently returns the response hit. The hit is unmarshalled
+// based on the given Unmarshaler parameter and returned as an interface left
+// to be type asserted by the caller.
 func (r *GetResult) Unwrap(doc Unmarshaler) (interface{}, error) {
 	if !r.Found {
 		return nil, errors.New("not found") // TODO is it really an error?
@@ -59,6 +71,7 @@ func (r *GetResult) Unwrap(doc Unmarshaler) (interface{}, error) {
 
 // -- Update API
 
+// Update returns the result of updating a document in Elasticsearch.
 func (api *DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, error) {
 	// Elasticsearch expects the document to be wrapped inside
 	// an object with "doc" key.
@@ -77,6 +90,7 @@ func (api *DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, err
 
 // -- Index API
 
+// Update returns the result of a indexing a document in Elasticsearch.
 func (api *DocumentAPI) Index(doc interface{}) (*IndexResult, error) {
 	payload, err := json.Marshal(doc)
 	if err != nil {
@@ -101,6 +115,8 @@ func (api *DocumentAPI) Index(doc interface{}) (*IndexResult, error) {
 	return &r, nil
 }
 
+// IndexResult is the result of indexing a document in Elasticsearch.
+
 type IndexResult struct {
 	ID     string `json:"_id"`
 	Result string `json:"result"` // "created" in case of success
@@ -108,6 +124,7 @@ type IndexResult struct {
 
 // TODO This may be useless. In which scenario we don't get an error
 // and yet the doc is not created ?
+// Unwrap conveniently returns the document ID.
 func (r *IndexResult) Unwrap() (string, error) {
 	if r.Result != "created" {
 		return "", errors.New("not created")
@@ -118,6 +135,7 @@ func (r *IndexResult) Unwrap() (string, error) {
 
 // -- Delete API
 
+// Update returns the result of a deleting a document in Elasticsearch.
 func (api *DocumentAPI) Delete(id string) (*esapi.Response, error) {
 	res, err := api.client.Delete(api.index, id)
 	if err != nil {
@@ -129,6 +147,7 @@ func (api *DocumentAPI) Delete(id string) (*esapi.Response, error) {
 
 // -- Bulk API
 
+// Update returns the result of a indexing many documents in Elasticsearch.
 func (api *DocumentAPI) Bulk(docs []interface{}) error {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
 		Index:  api.index,

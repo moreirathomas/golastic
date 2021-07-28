@@ -1,3 +1,6 @@
+// This file regroups all entities and methods to interact with
+// Elasticseach Search API.
+
 package golastic
 
 import (
@@ -8,12 +11,14 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
+// SearchAPI is used to search for documents in Elasticsearch.
 type SearchAPI struct {
 	client *elasticsearch.Client
 	index  string
 }
 
-func (api *SearchAPI) MatchAllQuery(p SearchPagination) (*SearchResults, error) {
+// MatchAllQuery returns the result of a query which match all documents.
+func (api *SearchAPI) MatchAllQuery(p SearchPagination) (*SearchResult, error) {
 	res, err := api.client.Search(
 		api.client.Search.WithIndex(api.index),
 		api.client.Search.WithBody(newMatchAllQuery().Reader()),
@@ -34,7 +39,9 @@ func (api *SearchAPI) MatchAllQuery(p SearchPagination) (*SearchResults, error) 
 	return r, nil
 }
 
-func (api *SearchAPI) MultiMatchQuery(qs string, f []Field, p SearchPagination, s SearchSort) (*SearchResults, error) {
+// MultiMatchQuery returns the result of a query which performs
+// a full text query across multiple fields.
+func (api *SearchAPI) MultiMatchQuery(qs string, f []Field, p SearchPagination, s SearchSort) (*SearchResult, error) {
 	if len(s) == 0 {
 		s = defaultSort
 	}
@@ -59,18 +66,23 @@ func (api *SearchAPI) MultiMatchQuery(qs string, f []Field, p SearchPagination, 
 	return r, nil
 }
 
-type SearchResults struct {
-	Hits *SearchHits `json:"hits,omitempty"` // the actual search hits
+// SearchResult is the result of search in Elasticsearch.
+type SearchResult struct {
+	Hits *SearchHits `json:"hits,omitempty"`
 }
 
-func (r *SearchResults) TotalHits() int {
+// TotalHits conveniently returns the number of hits for a search result.
+func (r *SearchResult) TotalHits() int {
 	if r != nil && r.Hits != nil && r.Hits.Total != nil {
 		return r.Hits.Total.Value
 	}
 	return 0
 }
 
-func (r *SearchResults) UnwrapHits(doc Unmarshaler) ([]interface{}, error) {
+// UnwrapHits conveniently returns the response hits. Each hit is unmarshalled
+// based on the given Unmarshaler parameter and returned as an interface left
+// to be type asserted by the caller.
+func (r *SearchResult) UnwrapHits(doc Unmarshaler) ([]interface{}, error) {
 	if r.Hits == nil || r.Hits.Hits == nil || len(r.Hits.Hits) == 0 {
 		return nil, nil
 	}
@@ -87,22 +99,24 @@ func (r *SearchResults) UnwrapHits(doc Unmarshaler) ([]interface{}, error) {
 	return hits, nil
 }
 
+// SearchHits represents the definition of the list of hits.
 type SearchHits struct {
-	Total *TotalHits `json:"total,omitempty"` // total number of hits found
-	Hits  []*Hit     `json:"hits,omitempty"`  // the actual hits returned
+	Total *TotalHits `json:"total,omitempty"`
+	Hits  []*Hit     `json:"hits,omitempty"` // The actual hits returned.
 }
 
+// SearchHits is the total number of hits.
 type TotalHits struct {
-	Value int `json:"value"` // value of the total hit count
+	Value int `json:"value"`
 }
 
-func decodeSearchResults(res *esapi.Response) (*SearchResults, error) {
+func decodeSearchResults(res *esapi.Response) (*SearchResult, error) {
 	defer res.Body.Close()
 	if err := ReadErrorResponse(res); err != nil {
 		return nil, err
 	}
 
-	var r SearchResults
+	var r SearchResult
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		return nil, err
 	}
