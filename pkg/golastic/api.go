@@ -1,12 +1,6 @@
 package golastic
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-)
+import "github.com/elastic/go-elasticsearch/v7"
 
 // ContextConfig configures the context for a Elasticsearch API call.
 type ContextConfig struct {
@@ -14,19 +8,25 @@ type ContextConfig struct {
 	IndexName string
 }
 
-// Document provides a NewHit method that is used to unmarshal a json
-// from the body of an Elasticsearch API response.
-type Document interface {
-	// NewHit returns the document as an unmarshalled struct
-	// or a non-nil error.
-	NewHit(id string, src json.RawMessage) (interface{}, error)
+// Indices interfaces Elasticsearch Indices API.
+func Indices(c *elasticsearch.Client) *IndicesAPI {
+	return &IndicesAPI{
+		client: c,
+	}
 }
 
-// ReadErrorResponse reads the response body and returns an error if
-// the response status indicates failure.
-func ReadErrorResponse(res *esapi.Response) error {
-	if res.IsError() {
-		return fmt.Errorf("elasticsearch error: %s", res)
+// Document interfaces Elasticsearch Document API.
+func Document(cfg ContextConfig) *DocumentAPI {
+	return &DocumentAPI{
+		client: cfg.Client,
+		index:  cfg.IndexName,
 	}
-	return nil
+}
+
+// Search interfaces Elasticsearch Search API.
+func Search(cfg ContextConfig) *SearchAPI {
+	return &SearchAPI{
+		client: cfg.Client,
+		index:  cfg.IndexName,
+	}
 }

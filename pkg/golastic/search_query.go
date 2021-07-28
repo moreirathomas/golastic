@@ -14,26 +14,33 @@ const (
 	DefaultQueryFrom = 0
 )
 
-var defaultSort = []map[string]string{{"_doc": "asc"}}
+var defaultSort = []string{"_doc:asc"}
 
-// SearchQuery represents an Elasticsearch search query.
-// It exposes methods to easily retrieve its value
-// as bytes, string or via io.Reader.
+// SearchPagination configures the pagination of an Elasticsearch search query.
+type SearchPagination struct {
+	From int
+	Size int
+}
+
+// SearchQuery configures the sort parameter of an Elasticsearch search query.
+type SearchSort []string
+
+// SearchQuery represents the body of query made to Elasticsearch
+// Search API. It is shaped as expected from Elasticsearch.
+//
+// It exposes methods for easy conversion to bytes, string or io.Reader.
+//
+// The nested field Query holds the full text query being used.
+// Only one of its fields must be used at a time.
 type SearchQuery struct {
-	// Query represents the body of the full text query being used.
-	// Only one of its fields must be used at a time.
 	Query struct {
 		MatchAll   MatchAllQuery   `json:"match_all,omitempty"`
 		MultiMatch MultiMatchQuery `json:"multi_match,omitempty"`
 	} `json:"query,omitempty"`
-
-	Sort []map[string]string `json:"sort,omitempty"`
-	From int                 `json:"from,omitempty"`
-	Size int                 `json:"size,omitempty"`
 }
 
 // MatchAllQuery is the query for performing queries
-// which matches all documents.
+// which match all documents.
 type MatchAllQuery struct {
 	Boost int `json:"boost,omitempty"`
 }
@@ -46,35 +53,37 @@ type MultiMatchQuery struct {
 	Operator string  `json:"operator,omitempty"`
 }
 
-// Bytes returns the raw query as bytes.
+// Bytes returns the query as bytes.
 func (q SearchQuery) Bytes() []byte {
 	b, _ := json.Marshal(q)
 	return b
 }
 
-// String returns the raw query as a string.
+// String returns the query as a string.
 func (q SearchQuery) String() string {
 	return string(q.Bytes())
 }
 
-// Reader returns the raw query as an io.Reader.
+// Reader returns the query as an io.Reader.
 func (q SearchQuery) Reader() io.Reader {
 	return bytes.NewReader(q.Bytes())
 }
 
-// Field is a field name associated with an optional weight.
+// Field represents a field as expected by Elasticsearch for
+// multi-match queries. A field can optionally have a weight.
+//
 // It provides marshaling methods allowing to comply automatically
-// with Elasticsearch syntax for fields in a query (see MarshalText)
+// with Elasticsearch syntax (see Field.MarshalText).
 type Field struct {
 	Name   string
 	Weight int
 }
 
-// MarshalText returns the stringified field as a slice of bytes
+// MarshalText returns a field stringified as a slice of bytes
 // and a nil error.
 //
 // It is automatically called by json.Marshal when it encounters
-// a Field value. We use it to format the Elasticsearch query.
+// a Field value. It is used when formatting an Elasticsearch query.
 //
 // For instance, marshaling the following:
 //
@@ -92,8 +101,7 @@ func (f Field) MarshalText() ([]byte, error) {
 	return []byte(f.String()), nil
 }
 
-// String returns a string representation of the field in the format
-// expected by Elasticsearch.
+// String returns a field as a string formatted as expected by Elasticsearch.
 // For example:
 //
 //	Field{Name: "title", Weight: 10}.String() == "title^10"
@@ -105,55 +113,18 @@ func (f Field) String() string {
 	return fmt.Sprintf("%s^%d", f.Name, f.Weight)
 }
 
-// SearchQueryConfig configures an Elasticsearch full text query.
-// Configuration keys are flattened to conveniently define a SearchQuery
-// without the need to reproduce its nested structure.
-type SearchQueryConfig struct {
-	Fields []Field
-	Sort   []map[string]string
-	From   int // From defines the number of hits to skip.
-	Size   int // Size defines the maximum number of hits to return.
-}
-
-// MatchAllSearchQuery returns a Query targeting all documents
-// for the current index, ordered by creation date.
-func MatchAllSearchQuery(size, from int) SearchQuery {
+// newMatchAllQuery returns a configured SearchQuery for match-all queries.
+func newMatchAllQuery() SearchQuery {
 	q := SearchQuery{}
 	q.Query.MatchAll.Boost = 1
-	q.Sort = defaultSort
-	q.setPagination(size, from)
 	return q
 }
 
-// NewSearchQuery returns a Query, built upon the given search query
-// and the QueryConfig.
-func NewSearchQuery(qs string, cfg SearchQueryConfig) SearchQuery {
+// newMultiMatchQuery returns a configured SearchQuery for multi-match queries.
+func newMultiMatchQuery(qs string, f []Field) SearchQuery {
 	q := SearchQuery{}
-
 	q.Query.MultiMatch.Query = qs
-	q.Query.MultiMatch.Fields = cfg.Fields
+	q.Query.MultiMatch.Fields = f
 	q.Query.MultiMatch.Operator = defaultOperator
-
-	if len(cfg.Sort) != 0 {
-		q.Sort = cfg.Sort
-	} else {
-		q.Sort = defaultSort
-	}
-
-	q.setPagination(cfg.Size, cfg.From)
 	return q
-}
-
-func (q *SearchQuery) setPagination(size, from int) {
-	if size > 0 {
-		q.Size = size
-	} else {
-		q.Size = DefaultQuerySize
-	}
-
-	if from >= -1 {
-		q.From = from
-	} else {
-		q.From = DefaultQueryFrom
-	}
 }

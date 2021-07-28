@@ -1,10 +1,7 @@
 package repository
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
@@ -16,59 +13,36 @@ var _ internal.BookService = (*Repository)(nil)
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
 func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Book, int, error) {
-	esQuery := buildSearchQuery(userQuery, size, from)
-	res, err := r.makeSearch(esQuery)
+	var res *golastic.SearchResult
+	var err error
+
+	if userQuery == "" {
+		res, err = golastic.Search(r.context()).MatchAllQuery(golastic.SearchPagination{Size: size, From: from})
+	} else {
+		res, err = golastic.Search(r.context()).MultiMatchQuery(userQuery,
+			[]golastic.Field{
+				{Name: "title", Weight: 10},
+				{Name: "abstract"},
+			},
+			golastic.SearchPagination{Size: size, From: from},
+			golastic.SearchSort{"_score:asc", "_doc:asc"},
+		)
+	}
 	if err != nil {
 		return []internal.Book{}, 0, err
 	}
 
-	books, err := unmarshalHits(res.Hits)
+	results, err := res.UnwrapHits(internal.Book{})
 	if err != nil {
-		return books, 0, fmt.Errorf("failed to unmarshal books: %w", err)
+		return []internal.Book{}, 0, err
 	}
 
-	return books, res.Total, nil
-}
-
-// makeSearch performs an Elasticsearch search request with the given query.
-func (r *Repository) makeSearch(esQuery io.Reader) (golastic.SearchResults, error) {
-	res, err := r.es.Search(
-		r.es.Search.WithIndex(r.indexName),
-		r.es.Search.WithBody(esQuery),
-		r.es.Search.WithTrackTotalHits(true),
-	)
+	books, err := unmarshalHits(results)
 	if err != nil {
-		return golastic.SearchResults{}, err
+		return []internal.Book{}, 0, fmt.Errorf("failed to unmarshal books: %w", err)
 	}
 
-	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return golastic.SearchResults{}, err
-	}
-
-	return golastic.UnwrapSearchResponse(res, internal.Book{})
-}
-
-// buildSearchQuery builds an Elasticsearch search query.
-func buildSearchQuery(s string, size, from int) io.Reader {
-	if s == "" {
-		return golastic.MatchAllSearchQuery(size, from).Reader()
-	}
-
-	q := golastic.NewSearchQuery(s, golastic.SearchQueryConfig{
-		Fields: []golastic.Field{
-			{Name: "title", Weight: 10},
-			{Name: "abstract"},
-		},
-		Sort: []map[string]string{
-			{"_score": "asc"},
-			{"_doc": "asc"},
-		},
-		Size: size,
-		From: from,
-	})
-
-	return q.Reader()
+	return books, res.TotalHits(), nil
 }
 
 func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
@@ -84,12 +58,17 @@ func unmarshalHits(hits []interface{}) ([]internal.Book, error) {
 }
 
 func (r Repository) GetBookByID(id string) (internal.Book, error) {
-	res, err := r.makeGet(id)
+	res, err := golastic.Document(r.context()).Get(id)
 	if err != nil {
 		return internal.Book{}, err
 	}
 
-	book, ok := res.(internal.Book)
+	result, err := res.Unwrap(internal.Book{})
+	if err != nil {
+		return internal.Book{}, err
+	}
+
+	book, ok := result.(internal.Book)
 	if !ok {
 		return book, fmt.Errorf("response has invalid book format: %#v", res)
 	}
@@ -97,39 +76,22 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 	return book, nil
 }
 
-// makeGet performs an Elasticsearch get request with the given id.
-func (r Repository) makeGet(id string) (interface{}, error) {
-	res, err := r.es.Get(r.indexName, id)
-	if err != nil {
-		return nil, err
-	}
-
-	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return nil, err
-	}
-
-	return golastic.UnwrapGetResponse(res, internal.Book{})
-}
-
 // InsertBook indexes a new book.
 func (r Repository) InsertBook(b internal.Book) (string, error) {
-	payload, err := json.Marshal(b)
+	res, err := golastic.Document(r.context()).Index(b)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf(
+			"%w failed to insert book %#v: %s",
+			ErrInternal, b, err,
+		)
 	}
 
-	res, err := r.es.Index(r.indexName, bytes.NewReader(payload))
+	id, err := res.Unwrap()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not insert book: %w", err)
 	}
 
-	defer res.Body.Close()
-	if err := golastic.ReadErrorResponse(res); err != nil {
-		return "", err
-	}
-
-	return golastic.UnwrapIndexResponse(res)
+	return id, nil
 }
 
 // InsertManyBooks indexes multiple new book documents at once.
@@ -139,40 +101,35 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 		in[i] = b
 	}
 
-	cfg := golastic.ContextConfig{
-		IndexName: r.indexName,
-		Client:    r.es,
+	if err := golastic.Document(r.context()).Bulk(in); err != nil {
+		return fmt.Errorf(
+			"%w: failed to insert books: %s",
+			ErrInternal, err,
+		)
 	}
 
-	return golastic.BulkIndex(cfg, in)
+	return nil
 }
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	// The document must be wrapped in a "doc" object
-	payload, err := json.Marshal(map[string]internal.Book{
-		"doc": b,
-	})
+	err := golastic.Document(r.context()).Update(b.ID, b)
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"%w: failed to update book %#v: %s",
+			ErrInternal, b, err,
+		)
 	}
-
-	res, err := r.es.Update(r.indexName, b.ID, bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-	return golastic.ReadErrorResponse(res)
+	// TODO: handle 404 when golastic allows it
+	return nil
 }
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := r.es.Delete(r.indexName, id)
+	err := golastic.Document(r.context()).Delete(id)
 	if err != nil {
 		return err
 	}
-
-	defer res.Body.Close()
-	return golastic.ReadErrorResponse(res)
+	// TODO: handle 404 when golastic allows it
+	return nil
 }

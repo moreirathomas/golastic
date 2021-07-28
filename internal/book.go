@@ -6,6 +6,8 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+
+	"github.com/moreirathomas/golastic/pkg/golastic"
 )
 
 // Book represents a book in the API.
@@ -67,15 +69,13 @@ func (a Author) Validate(partial bool) error {
 	)
 }
 
-// NewHit returns a new hit for ElasticSearch search result that can be later
-// casted as a Book. It is necessary to implement elasticsearch.Document interface.
-func (b Book) NewHit(id string, src json.RawMessage) (interface{}, error) {
-	hit := Book{
-		ID: id,
+// UnmarshalHit returns a new hit for ElasticSearch search result that can be later
+// casted as a Book. It is necessary to implement elasticsearch.Unmarshaler interface.
+func (b Book) UnmarshalHit(h golastic.Hit) (interface{}, error) {
+	var bookResult Book
+	if err := json.Unmarshal(h.Source, &bookResult); err != nil {
+		return bookResult, err
 	}
-	if err := json.Unmarshal(src, &hit); err != nil {
-		return Book{}, err
-	}
-
-	return hit, nil
+	bookResult.ID = h.ID
+	return bookResult, nil
 }

@@ -24,15 +24,25 @@ type Repository struct {
 	indexName string
 }
 
+func (r Repository) context() golastic.ContextConfig {
+	return golastic.ContextConfig{
+		IndexName: r.indexName,
+		Client:    r.es,
+	}
+}
+
 // New returns a new instance of repository.
-func New(c Config) (*Repository, error) {
-	if c.IndexName == "" {
+func New(cfg Config) (*Repository, error) {
+	if cfg.IndexName == "" {
 		return &Repository{}, errors.New("cannot use empty string \"\" as index name")
 	}
 
-	repo := Repository{es: c.Client, indexName: c.IndexName}
+	repo := Repository{
+		es:        cfg.Client,
+		indexName: cfg.IndexName,
+	}
 
-	if err := repo.setupIndex(c.Mapping); err != nil {
+	if err := repo.setupIndex(cfg.Mapping); err != nil {
 		return nil, err
 	}
 
@@ -40,12 +50,7 @@ func New(c Config) (*Repository, error) {
 }
 
 func (r *Repository) setupIndex(mapping string) error {
-	cfg := golastic.ContextConfig{
-		IndexName: r.indexName,
-		Client:    r.es,
-	}
-
-	isCreate, err := golastic.CreateIndexIfNotExists(cfg, mapping)
+	isCreate, err := golastic.Indices(r.es).CreateIfNotExists(r.indexName, mapping)
 	if isCreate {
 		log.Println("Creating Elasticsearch index with mapping")
 	}
