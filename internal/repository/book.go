@@ -63,7 +63,7 @@ func (r Repository) GetBookByID(id string) (internal.Book, error) {
 		return internal.Book{}, err
 	}
 
-	result, err := golastic.ReadGetResponse(res, internal.Book{})
+	result, err := res.Unwrap(internal.Book{})
 	if err != nil {
 		return internal.Book{}, err
 	}
@@ -86,7 +86,7 @@ func (r Repository) InsertBook(b internal.Book) (string, error) {
 		)
 	}
 
-	id, err := golastic.ReadInsertResponse(res)
+	id, err := res.Unwrap()
 	if err != nil {
 		return "", fmt.Errorf("could not insert book: %w", err)
 	}

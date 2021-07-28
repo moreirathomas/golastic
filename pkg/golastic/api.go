@@ -9,15 +9,15 @@ type ContextConfig struct {
 }
 
 // Indices interfaces Elasticsearch Indices API.
-func Indices(c *elasticsearch.Client) IndicesAPI {
-	return IndicesAPI{
+func Indices(c *elasticsearch.Client) *IndicesAPI {
+	return &IndicesAPI{
 		client: c,
 	}
 }
 
 // Document interfaces Elasticsearch Document API.
-func Document(cfg ContextConfig) DocumentAPI {
-	return DocumentAPI{
+func Document(cfg ContextConfig) *DocumentAPI {
+	return &DocumentAPI{
 		client: cfg.Client,
 		index:  cfg.IndexName,
 	}

@@ -3,6 +3,7 @@ package golastic
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -17,15 +18,48 @@ type DocumentAPI struct {
 	index  string
 }
 
-func (api DocumentAPI) Get(id string) (*esapi.Response, error) {
+// -- Get API
+
+func (api *DocumentAPI) Get(id string) (*GetResult, error) {
 	res, err := api.client.Get(api.index, id)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
-	return res, nil
+
+	defer res.Body.Close()
+	if err := ReadErrorResponse(res); err != nil {
+		return nil, err
+	}
+
+	var r GetResult
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
-func (api DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, error) {
+type GetResult struct {
+	Found bool `json:"found"`
+	Hit
+}
+
+func (r *GetResult) Unwrap(doc Unmarshaler) (interface{}, error) {
+	if !r.Found {
+		return nil, errors.New("not found") // TODO is it really an error?
+	}
+
+	result, err := doc.UnmarshalHit(r.Hit)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// -- Update API
+
+func (api *DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, error) {
 	// Elasticsearch expects the document to be wrapped inside
 	// an object with "doc" key.
 	payload, err := json.Marshal(map[string]interface{}{"doc": doc})
@@ -41,7 +75,9 @@ func (api DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, erro
 	return res, nil
 }
 
-func (api DocumentAPI) Index(doc interface{}) (*esapi.Response, error) {
+// -- Index API
+
+func (api *DocumentAPI) Index(doc interface{}) (*IndexResult, error) {
 	payload, err := json.Marshal(doc)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
@@ -52,10 +88,37 @@ func (api DocumentAPI) Index(doc interface{}) (*esapi.Response, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
-	return res, nil
+	defer res.Body.Close()
+	if err := ReadErrorResponse(res); err != nil {
+		return nil, err
+	}
+
+	var r IndexResult
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
-func (api DocumentAPI) Delete(id string) (*esapi.Response, error) {
+type IndexResult struct {
+	ID     string `json:"_id"`
+	Result string `json:"result"` // "created" in case of success
+}
+
+// TODO This may be useless. In which scenario we don't get an error
+// and yet the doc is not created ?
+func (r *IndexResult) Unwrap() (string, error) {
+	if r.Result != "created" {
+		return "", errors.New("not created")
+	}
+
+	return r.ID, nil
+}
+
+// -- Delete API
+
+func (api *DocumentAPI) Delete(id string) (*esapi.Response, error) {
 	res, err := api.client.Delete(api.index, id)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
@@ -64,7 +127,9 @@ func (api DocumentAPI) Delete(id string) (*esapi.Response, error) {
 	return res, nil
 }
 
-func (api DocumentAPI) Bulk(docs []interface{}) error {
+// -- Bulk API
+
+func (api *DocumentAPI) Bulk(docs []interface{}) error {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
 		Index:  api.index,
 		Client: api.client,
