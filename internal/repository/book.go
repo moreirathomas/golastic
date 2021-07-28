@@ -113,25 +113,23 @@ func (r *Repository) InsertManyBooks(books []internal.Book) error {
 
 // UpdateBook updates the specified book with a partial book input.
 func (r Repository) UpdateBook(b internal.Book) error {
-	res, err := golastic.Document(r.context()).Update(b.ID, b)
+	err := golastic.Document(r.context()).Update(b.ID, b)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: failed to update book %#v: %s",
 			ErrInternal, b, err,
 		)
 	}
-
 	// TODO: handle 404 when golastic allows it
-	return golastic.ReadErrorResponse(res)
+	return nil
 }
 
 // DeleteBook removes the specified book from the index.
 func (r Repository) DeleteBook(id string) error {
-	res, err := golastic.Document(r.context()).Delete(id)
+	err := golastic.Document(r.context()).Delete(id)
 	if err != nil {
 		return err
 	}
-
 	// TODO: handle 404 when golastic allows it
-	return golastic.ReadErrorResponse(res)
+	return nil
 }

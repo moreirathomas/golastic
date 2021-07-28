@@ -20,9 +20,9 @@ type Unmarshaler interface {
 	UnmarshalHit(Hit) (interface{}, error)
 }
 
-// ReadErrorResponse reads the response body and returns an error if
+// readErrorResponse reads the response body and returns an error if
 // the response status indicates failure.
-func ReadErrorResponse(res *esapi.Response) error {
+func readErrorResponse(res *esapi.Response) error {
 	if !res.IsError() {
 		return nil
 	}

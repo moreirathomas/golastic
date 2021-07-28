@@ -15,7 +15,6 @@ import (
 
 	"github.com/clarketm/json"
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 )
 
@@ -35,7 +34,7 @@ func (api *DocumentAPI) Get(id string) (*GetResult, error) {
 	}
 
 	defer res.Body.Close()
-	if err := ReadErrorResponse(res); err != nil {
+	if err := readErrorResponse(res); err != nil {
 		return nil, err
 	}
 
@@ -72,20 +71,21 @@ func (r *GetResult) Unwrap(doc Unmarshaler) (interface{}, error) {
 // -- Update API
 
 // Update returns the result of updating a document in Elasticsearch.
-func (api *DocumentAPI) Update(id string, doc interface{}) (*esapi.Response, error) {
+func (api *DocumentAPI) Update(id string, doc interface{}) error {
 	// Elasticsearch expects the document to be wrapped inside
 	// an object with "doc" key.
 	payload, err := json.Marshal(map[string]interface{}{"doc": doc})
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
+		return fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
 	res, err := api.client.Update(api.index, id, bytes.NewReader(payload))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
+		return fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
-	return res, nil
+	defer res.Body.Close()
+	return readErrorResponse(res)
 }
 
 // -- Index API
@@ -103,7 +103,7 @@ func (api *DocumentAPI) Index(doc interface{}) (*IndexResult, error) {
 	}
 
 	defer res.Body.Close()
-	if err := ReadErrorResponse(res); err != nil {
+	if err := readErrorResponse(res); err != nil {
 		return nil, err
 	}
 
@@ -136,13 +136,14 @@ func (r *IndexResult) Unwrap() (string, error) {
 // -- Delete API
 
 // Update returns the result of a deleting a document in Elasticsearch.
-func (api *DocumentAPI) Delete(id string) (*esapi.Response, error) {
+func (api *DocumentAPI) Delete(id string) error {
 	res, err := api.client.Delete(api.index, id)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrUnhandled, err)
+		return fmt.Errorf("%w: %s", ErrUnhandled, err)
 	}
 
-	return res, nil
+	defer res.Body.Close()
+	return readErrorResponse(res)
 }
 
 // -- Bulk API

@@ -21,7 +21,7 @@ func (api IndicesAPI) Exists(index string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch err := ReadErrorResponse(res); err {
+	switch err := readErrorResponse(res); err {
 	case nil:
 		return true, nil
 	case ErrNotFound:
@@ -41,7 +41,7 @@ func (api IndicesAPI) Create(index, mapping string) error {
 		return err
 	}
 
-	return ReadErrorResponse(res)
+	return readErrorResponse(res)
 }
 
 // CreateIfNotExists creates a new index with mapping if the index does not

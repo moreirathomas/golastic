@@ -112,7 +112,7 @@ type TotalHits struct {
 
 func decodeSearchResults(res *esapi.Response) (*SearchResult, error) {
 	defer res.Body.Close()
-	if err := ReadErrorResponse(res); err != nil {
+	if err := readErrorResponse(res); err != nil {
 		return nil, err
 	}
 
