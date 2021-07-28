@@ -70,7 +70,7 @@ func (a Author) Validate(partial bool) error {
 }
 
 // UnmarshalHit returns a new hit for ElasticSearch search result that can be later
-// casted as a Book. It is necessary to implement elasticsearch.Document interface.
+// casted as a Book. It is necessary to implement elasticsearch.Unmarshaler interface.
 func (b Book) UnmarshalHit(h golastic.Hit) (interface{}, error) {
 	var bookResult Book
 	if err := json.Unmarshal(h.Source, &bookResult); err != nil {

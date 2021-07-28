@@ -3,7 +3,6 @@ package repository
 import (
 	"fmt"
 
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/moreirathomas/golastic/internal"
 	"github.com/moreirathomas/golastic/pkg/golastic"
 )
@@ -14,11 +13,7 @@ var _ internal.BookService = (*Repository)(nil)
 // SearchBooks retrieves books matching the userQuery in the database
 // or the first non-nil error encountered in the process.
 func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Book, int, error) {
-	handleError := func(err error) ([]internal.Book, int, error) {
-		return []internal.Book{}, 0, err
-	}
-
-	var res *esapi.Response
+	var res *golastic.SearchResults
 	var err error
 
 	if userQuery == "" {
@@ -34,20 +29,20 @@ func (r Repository) SearchBooks(userQuery string, size, from int) ([]internal.Bo
 		)
 	}
 	if err != nil {
-		return handleError(err)
+		return []internal.Book{}, 0, err
 	}
 
-	results, err := golastic.ReadSearchResponse(res, internal.Book{})
+	results, err := res.UnwrapHits(internal.Book{})
 	if err != nil {
-		return handleError(err)
+		return []internal.Book{}, 0, err
 	}
 
-	books, err := unmarshalHits(results.Results)
+	books, err := unmarshalHits(results)
 	if err != nil {
-		return handleError(fmt.Errorf("failed to unmarshal books: %w", err))
+		return []internal.Book{}, 0, fmt.Errorf("failed to unmarshal books: %w", err)
 	}
 
-	return books, results.Total, nil
+	return books, res.TotalHits(), nil
 }
 
 func unmarshalHits(hits []interface{}) ([]internal.Book, error) {

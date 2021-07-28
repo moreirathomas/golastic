@@ -24,8 +24,8 @@ func Document(cfg ContextConfig) DocumentAPI {
 }
 
 // Search interfaces Elasticsearch Search API.
-func Search(cfg ContextConfig) SearchAPI {
-	return SearchAPI{
+func Search(cfg ContextConfig) *SearchAPI {
+	return &SearchAPI{
 		client: cfg.Client,
 		index:  cfg.IndexName,
 	}
