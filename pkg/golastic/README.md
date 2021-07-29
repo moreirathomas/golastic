@@ -4,7 +4,7 @@ The package `golastic` defines a custom API to interface `elastic/go-elasticsear
 
 It exposes 3 main APIs: `Indices`, `Document` and `Search`. Each of these have methods to interact with Elasticsearch. These methods return custom response types which themselves have method to conveniently parse and use the native `esapi.Response` response type.
 
-> `golastic` options and structs are defined based on our needs. Thus requests are not freely parameterizable nor the response types are exhaustive regarding the defined fields.
+> `golastic` options and structs are defined based on our needs. Thus requests are not fully parameterizable nor the response types are exhaustive regarding the fields defined and supported.
 
 ## Make a request
 

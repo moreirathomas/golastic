@@ -1,6 +1,23 @@
-# Golastic
+# Golastic <!-- omit in toc -->
 
 Golastic is a web API offering full text search and CRUD operations on a book collection via Elasticsearch.
+
+## Table of contents <!-- omit in toc -->
+
+- [Getting started](#getting-started)
+  - [Installation and dependencies](#installation-and-dependencies)
+  - [Run the project in Docker](#run-the-project-in-docker)
+  - [Run the server locally](#run-the-server-locally)
+  - [Test and lint](#test-and-lint)
+  - [Populate with dummies](#populate-with-dummies)
+  - [Test routes with CURL commands](#test-routes-with-curl-commands)
+- [Architecture](#architecture)
+  - [Folder structure](#folder-structure)
+  - [`internal`](#internal)
+  - [`pkg`](#pkg)
+  - [`cmd`](#cmd)
+- [Further documentation](#further-documentation)
+- [Acknowledgement and contributors](#acknowledgement-and-contributors)
 
 ## Getting started
 
@@ -39,8 +56,8 @@ To start the server locally with Elasticsearch containers in the background, run
 make local
 
 # alias to:
-docker-compose --env-file ./.env.local up --detach elasticsearch kibana && \
-go run cmd/main.go --env-file ./.env.local
+# docker-compose --env-file ./.env.local up --detach elasticsearch kibana && \
+# go run cmd/main.go --env-file ./.env.local
 ```
 
 Alternatively, if you wish to keep track of elasticsearch containers output:
@@ -70,7 +87,7 @@ make test
 # go test -v -timeout 30s ./...
 ```
 
-Run a specific test:
+Run a specific test with `t` to specify a test and `p` to specify a package (parameters are independent):
 
 ```sh
 make test t=TestMarshaling p=pkg/golastic
@@ -90,116 +107,61 @@ make lint
 
 ### Populate with dummies
 
-We use a CLI flag to conditionally populate Elasticsearch's index on start-up. To use it, simply run:
+You may use a CLI flag to populate Elasticsearch's index on start-up. To use it, simply run:
 
 ```sh
-go run cmd/main.go -p --env-file ./.env.local
+go run cmd/main.go -p
 ```
 
 Only the first run (or any run following an erasure of the Docker volume) requires the use of this flag, as the dummy data will not be overwritten.
 
-### Test with queries
+### Test routes with CURL commands
 
-#### Search books by full text query
+Refer to the [routes specifition](internal/http/README.md) for detailed requests queries and responses data. It comes with handy CURL commands to quickly test the routes at runtime.
 
-Request:
+## Architecture
 
-```sh
-curl http://localhost:9999/books?query=foo&page=1&size=10
-```
+### Folder structure
 
-Response:
-
-```json
-200 OK
-
-{
-  "links": {},
-  "page": 1,
-  "per_page": 10,
-  "results": [
-    {
-      "abstract": "Lorem ispum baz but with foo also",
-      "title": "Baz"
-    },
-    {
-      "abstract": "Lorem ispum foo",
-      "title": "Foo"
-    }
-  ],
-  "total": 2
-}
-```
-
-#### Get a book by ID
-
-Request:
-
-```sh
-curl  http://localhost:9999/books/nWJ45HoBEwNIQ_UGmi_R
-```
-
-Response:
-
-```json
-200 OK
-
-{
-  "abstract": "Lorem ispum foo",
-  "author": {
-    "firstname": "John",
-    "lastname": "Doe"
-  },
-  "created_at": "0001-01-01T00:00:00Z",
-  "id": "nWJ45HoBEwNIQ_UGmi_R",
-  "title": "Foo"
-}
-```
-
-#### Create a book
-
-Request:
-
-```sh
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Post", "abstract": "Created recently", "author": {"firstname": "User", "lastname": "User"}}' \
-  http://localhost:9999/books
-```
-
-Response:
+The main functional packages for the project are:
 
 ```txt
-201 Created
+.
+├── cmd
+├── internal
+│   ├── http
+│   └── repository
+└── pkg
+    ├── golastic
+    └── ...
 ```
 
-#### Update a book
+### `internal`
 
-Request:
+The main application code. It defines domain related entities at its root and its child packages are grouped by dependencies (data access and transport).
 
-```sh
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -d '{"abstract": "Redacted"}' \
-  http://localhost:9999/books/nWJ45HoBEwNIQ_UGmi_R
-```
+### `pkg`
 
-Response:
+Purposeful and reusable library code. It does not import any types from `internal` and does not rely on it to work. There is no domain logic inside this directory.
 
-```txt
-204 No Content
-```
+### `cmd`
 
-#### Delete a book
+Main application for the project. A `main` function imports and call code from `internal` or `pkg`. It ties all dependencies together and injects runtime variables.
 
-Request:
+## Further documentation
 
-```sh
-curl -X DELETE http://localhost:9999/books/nWJ45HoBEwNIQ_UGmi_R
-```
+Sub-packages have their own documentation when it is relevant. You may refer to these docs:
 
-Response:
+- [http](internal/http/README.md)
+- [repository](internal/repository/README.md)
+- [golastic](pkg/golastic/README.md)
 
-```txt
-204 No Content
-```
+Moreover, all types, functions and methods are documented.
+
+## Acknowledgement and contributors
+
+This project is part of an school assignement. Our team members are:
+
+- Gregory Albouy
+- Thomas Moreira
+- Damien Mathieu
